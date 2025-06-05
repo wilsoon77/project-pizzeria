@@ -22,6 +22,8 @@ import AdminOrdenes from './pages/admin/AdminOrdenes';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
+import OrdenConfirmacion from './pages/OrdenConfirmacion'; // Ajusta según el nombre que hayas elegido
+
 
 // Contexto
 import { CartProvider } from './context/CartContext';
@@ -45,6 +47,9 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/order/:id" element={<OrderStatus />} />
+
+
+                <Route path="/orden-confirmacion" element={<OrdenConfirmacion />} />
 
                 {/* Rutas de Administración */}
                 <Route path="/admin/login" element={<AdminLogin />} />

@@ -4,8 +4,21 @@ import sql from 'mssql';
 import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-
+import PDFDocument from 'pdfkit';
+import fs from 'fs-extra';
+import path from 'path';
 dotenv.config();
+import nodemailer from 'nodemailer';
+
+import { Resend } from 'resend';
+import ExcelJS from 'exceljs';
+import { format } from 'date-fns';
+
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -419,17 +432,66 @@ app.post('/api/ordenes', async (req, res) => {
     // Fix 6: Use orden_id here as well
     await transaction.request()
       .input('orden_id', sql.Int, orden_id)
-      .input('metodo_pago', sql.VarChar, metodo_pago)  // Add this line
-      .input('estado', sql.VarChar, 'pendiente')
+      .input('metodo_pago', sql.VarChar, metodo_pago)
+      .input('estado_pago', sql.VarChar, 'pendiente')  // Cambiado de 'estado' a 'estado_pago'
       .input('total', sql.Decimal(10, 2), total)
       .input('numero_factura', sql.VarChar, 'FAC-' + Date.now())
       .query(`
-    INSERT INTO Factura (orden_id, numero_factura, metodo_pago, estado, monto_total)
-    VALUES (@orden_id, @numero_factura, @metodo_pago, @estado, @total)
+    INSERT INTO Factura (orden_id, numero_factura, metodo_pago, estado_pago, monto_total)
+    VALUES (@orden_id, @numero_factura, @metodo_pago, @estado_pago, @total)
   `);
 
     await transaction.commit();
 
+    // Crear un nuevo Request DESPUÉS del commit
+    const newRequest = new sql.Request();
+    newRequest.input('cliente_id', sql.Int, cliente_id);
+
+    // Obtener información del cliente para el correo
+    const clienteInfo = await newRequest.query(`
+  SELECT nombre, email 
+  FROM Cliente 
+  WHERE id = @cliente_id
+`);
+
+    if (clienteInfo.recordset.length > 0) {
+      const cliente = clienteInfo.recordset[0];
+
+      // Obtener detalles completos de los items para el correo
+      const detalleItems = [];
+      for (const item of items) {
+        const infoRequest = new sql.Request();
+        const itemInfo = await infoRequest
+          .input('pizza_id', sql.Int, item.pizza_id)
+          .input('tamano_id', sql.Int, item.tamano_id)
+          .query(`
+    SELECT p.nombre as pizza_nombre, t.nombre as tamano_nombre
+    FROM Pizza p 
+    JOIN Tamano_Pizza t ON t.id = @tamano_id
+    WHERE p.id = @pizza_id
+  `);
+
+        if (itemInfo.recordset.length > 0) {
+          detalleItems.push({
+            ...item,
+            pizza_nombre: itemInfo.recordset[0].pizza_nombre,
+            tamano_nombre: itemInfo.recordset[0].tamano_nombre
+          });
+        } else {
+          detalleItems.push(item);
+        }
+      }
+
+      // Enviar correo de confirmación (no esperamos a que termine)
+      enviarConfirmacionOrden(
+        cliente.email,
+        cliente.nombre,
+        orden_id,
+        detalleItems,
+        total,
+        direccion_entrega
+      ).catch(err => console.error('Error enviando confirmación:', err));
+    }
     res.status(201).json({
       orden_id: orden_id,
       message: 'Orden creada con éxito'
@@ -441,50 +503,6 @@ app.post('/api/ordenes', async (req, res) => {
   }
 });
 
-// app.patch('/api/ordenes/:id', async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const { estado } = req.body;
-
-//     if (!['recibido', 'en preparacion', 'en camino', 'entregado', 'cancelado'].includes(estado)) {
-//       return res.status(400).json({ error: 'Estado no válido' });
-//     }
-
-//     // Fixed: Changed orden_id to id
-//     const result = await sql.query`
-//       UPDATE Orden
-//       SET estado = ${estado}
-//       OUTPUT INSERTED.*
-//       WHERE id = ${id}
-//     `;
-
-//     if (result.recordset.length === 0) {
-//       return res.status(404).json({ error: 'Orden no encontrada' });
-//     }
-
-//     // Fixed: These are correct since you're using orden_id as the foreign key
-//     if (estado === 'entregado') {
-//       await sql.query`
-//         UPDATE Factura
-//         SET estado_pago = 'completado'
-//         WHERE orden_id = ${id} AND estado_pago = 'pendiente'
-//       `;
-//     }
-
-//     if (estado === 'cancelado') {
-//       await sql.query`
-//         UPDATE Factura
-//         SET estado_pago = 'cancelado'
-//         WHERE orden_id = ${id}
-//       `;
-//     }
-
-//     res.json(result.recordset[0]);
-//   } catch (error) {
-//     console.error('Error al actualizar orden:', error);
-//     res.status(500).json({ error: 'Error al actualizar orden' });
-//   }
-// });
 
 // Rutas para facturas
 
@@ -563,7 +581,7 @@ app.patch('/api/facturas/:id/estado', async (req, res) => {
 
     const result = await sql.query`
       UPDATE Factura
-      SET estado = ${estado_pago}
+      SET estado_pago = ${estado_pago}
       OUTPUT INSERTED.*
       WHERE id = ${id}
     `;
@@ -1170,7 +1188,7 @@ app.patch('/api/ordenes/:id', async (req, res) => {
   }
 });
 
-// Endpoint para generar una factura (simulado)
+// Endpoint para generar una factura
 app.post('/api/facturas/generar/:ordenId', async (req, res) => {
   try {
     const { ordenId } = req.params;
@@ -1209,25 +1227,21 @@ app.post('/api/facturas/generar/:ordenId', async (req, res) => {
 
     const monto_total = totalResult.recordset[0].total;
 
-    // Generar una nueva factura
+    // Generar una nueva factura con los campos correctos
     request.input('orden_id', sql.Int, ordenId);
-    request.input('fecha', sql.DateTime, new Date());
+    request.input('fecha_emision', sql.DateTime, new Date());
     request.input('monto_total', sql.Decimal(10, 2), monto_total);
+    request.input('numero_factura', sql.NVarChar, `FAC-${Date.now()}`);
+    request.input('estado_pago', sql.NVarChar, 'pendiente');
+    request.input('metodo_pago', sql.NVarChar, ordenResult.recordset[0].metodo_pago);
 
     const nuevaFacturaResult = await request.query(`
-      INSERT INTO Factura (orden_id, fecha, monto_total)
+      INSERT INTO Factura (orden_id, fecha_emision, monto_total, numero_factura, estado_pago, metodo_pago)
       OUTPUT INSERTED.*
-      VALUES (@orden_id, @fecha, @monto_total)
+      VALUES (@orden_id, @fecha_emision, @monto_total, @numero_factura, @estado_pago, @metodo_pago)
     `);
 
     const nuevaFactura = nuevaFacturaResult.recordset[0];
-
-    // Actualizar el estado de la orden a "completado" si no lo está
-    await request.query(`
-      UPDATE Orden
-      SET estado = 'completado'
-      WHERE id = @id AND estado = 'pendiente'
-    `);
 
     res.status(201).json({
       message: 'Factura generada correctamente',
@@ -1240,6 +1254,781 @@ app.post('/api/facturas/generar/:ordenId', async (req, res) => {
   }
 });
 
+
+// =====================GENERACION FACTURA======================
+// Ruta para generar y descargar un PDF de la factura
+app.get('/api/facturas/descargar/:ordenId', async (req, res) => {
+  try {
+    const { ordenId } = req.params;
+
+    // 1. Verificar si existe una factura para esta orden
+    const requestCheck = new sql.Request();
+    requestCheck.input('ordenId', sql.Int, ordenId);
+    const facturaResult = await requestCheck.query(`
+      SELECT f.id as factura_id, 
+             f.fecha_emision,
+             f.monto_total, 
+             f.estado_pago,
+             f.numero_factura,
+             o.cliente_id, 
+             c.nombre as cliente_nombre, 
+             c.email as cliente_email,
+             o.fecha_orden, 
+             o.direccion_entrega, 
+             o.telefono_contacto
+      FROM Factura f
+      JOIN Orden o ON f.orden_id = o.id
+      JOIN Cliente c ON o.cliente_id = c.id
+      WHERE f.orden_id = @ordenId
+    `);
+
+    // Si no hay factura generada, primero hay que generarla
+    if (facturaResult.recordset.length === 0) {
+      return res.status(404).json({ error: 'No existe una factura para esta orden. Debe generar la factura primero.' });
+    }
+
+    // 2. Obtener los detalles de la factura
+    const factura = facturaResult.recordset[0];
+
+    // 3. Obtener los items de la orden
+    const requestItems = new sql.Request();
+    requestItems.input('ordenId', sql.Int, ordenId);
+    const itemsResult = await requestItems.query(`
+      SELECT d.id as detalle_id, p.nombre as pizza_nombre, t.nombre as tamano_nombre,
+             d.cantidad, d.precio_unitario
+      FROM Detalle_Orden d
+      JOIN Pizza p ON d.pizza_id = p.id
+      JOIN Tamano_Pizza t ON d.tamano_id = t.id
+      WHERE d.orden_id = @ordenId
+    `);
+
+    const items = itemsResult.recordset;
+
+    // 4. Generar el PDF
+    const dirPath = path.join(__dirname, 'facturas');
+    await fs.ensureDir(dirPath);
+
+    // Nombre del archivo PDF
+    const fileName = `factura_${factura.factura_id}_${Date.now()}.pdf`;
+    const filePath = path.join(dirPath, fileName);
+
+    // Crear un nuevo documento PDF
+    const doc = new PDFDocument({ margin: 50 });
+
+    // Pipe el PDF a un archivo y a la respuesta
+    const stream = fs.createWriteStream(filePath);
+    doc.pipe(stream);
+
+    // Añadir encabezado de factura
+    doc.fontSize(25).text('FACTURA', { align: 'center' });
+    doc.moveDown();
+
+    // Información de la pizzería
+    doc.fontSize(12).text('Pizzería Deliciosa', { align: 'center' });
+    doc.fontSize(10)
+      .text('3ra Calle 4-42 Zona 1, Chimaltenango, Guatemala', { align: 'center' })
+      .text('Tel: +(502) 7839-5678', { align: 'center' })
+      .text('info@pizzeriadeliciosa.com', { align: 'center' });
+
+    doc.moveDown(2);
+
+    // Detalles de la factura y cliente
+    doc.fontSize(12).text(`Factura #: ${factura.numero_factura || factura.factura_id}`, { continued: true })
+      .text(`Fecha: ${new Date(factura.fecha_emision).toLocaleDateString()}`, { align: 'right' });
+    doc.moveDown();
+
+    doc.fontSize(12).text('Cliente:');
+    doc.fontSize(10)
+      .text(`Nombre: ${factura.cliente_nombre}`)
+      .text(`Teléfono: ${factura.telefono_contacto || 'No especificado'}`)
+      .text(`Dirección: ${factura.direccion_entrega || 'No especificada'}`);
+
+    doc.moveDown(0.5);
+    doc.fontSize(10)
+      .text(`Estado de pago: ${factura.estado_pago || 'Pendiente'}`, { align: 'right' });
+    doc.moveDown(2);
+
+    // El resto del código para generar el PDF permanece igual...
+    // Crear tabla para los items
+    const tableTop = doc.y;
+    const itemX = 50;
+    const descriptionX = 150;
+    const quantityX = 290;
+    const priceX = 370;
+    const amountX = 450;
+
+    // Encabezados de columnas
+    doc.fontSize(10)
+      .text('Item', itemX, tableTop)
+      .text('Descripción', descriptionX, tableTop)
+      .text('Cantidad', quantityX, tableTop)
+      .text('Precio', priceX, tableTop)
+      .text('Importe', amountX, tableTop);
+
+    // Línea horizontal después de encabezados
+    doc.moveTo(50, tableTop + 15)
+      .lineTo(550, tableTop + 15)
+      .stroke();
+
+    // Añadir items
+    let y = tableTop + 25;
+    let totalAmount = 0;
+
+    items.forEach((item, i) => {
+      const itemTotal = item.cantidad * item.precio_unitario;
+      totalAmount += itemTotal;
+
+      doc.fontSize(10)
+        .text(i + 1, itemX, y)
+        .text(`${item.pizza_nombre} (${item.tamano_nombre})`, descriptionX, y)
+        .text(item.cantidad, quantityX, y)
+        .text(`Q${item.precio_unitario.toFixed(2)}`, priceX, y)
+        .text(`Q${itemTotal.toFixed(2)}`, amountX, y);
+
+      y += 20;
+
+      // Añadir otra página si es necesario
+      if (y > 700) {
+        doc.addPage();
+        y = 50;
+      }
+    });
+
+    // Línea horizontal después de items
+    doc.moveTo(50, y)
+      .lineTo(550, y)
+      .stroke();
+
+    y += 20;
+
+    // Totales
+    doc.fontSize(10)
+      .text('Subtotal:', 350, y)
+      .text(`Q${totalAmount.toFixed(2)}`, amountX, y);
+
+    y += 20;
+
+    doc.fontSize(10)
+      .text('IVA (12%):', 350, y)
+      .text(`Q${(totalAmount * 0.12).toFixed(2)}`, amountX, y);
+
+    y += 20;
+
+    doc.fontSize(12).font('Helvetica-Bold')
+      .text('TOTAL:', 350, y)
+      .text(`Q${factura.monto_total.toFixed(2)}`, amountX, y);
+
+    // Pie de página
+    doc.fontSize(10).font('Helvetica')
+      .text('Gracias por su compra!', { align: 'center' });
+
+    // Finalizar el PDF
+    doc.end();
+
+    // Esperar a que el archivo se escriba completamente
+    stream.on('finish', () => {
+      // Enviar el archivo al cliente
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+      fs.createReadStream(filePath).pipe(res);
+    });
+
+  } catch (error) {
+    console.error('Error al generar el PDF de la factura:', error);
+    res.status(500).json({ error: 'Error al generar el PDF de la factura' });
+  }
+});
+
+// =========================EXPORTACIONES ==========================
+
+
+// Endpoint para generar reporte de ventas en Excel
+app.get('/api/reportes/ventas', async (req, res) => {
+  try {
+    // Parámetros opcionales para filtrado
+    const { fechaInicio, fechaFin } = req.query;
+
+    const request = new sql.Request();
+
+    // Construir consulta SQL con filtros opcionales
+    let query = `
+      SELECT 
+        o.id as orden_id,
+        o.fecha_orden as fecha,
+        c.nombre as cliente,
+        o.metodo_pago,
+        o.estado,
+        f.numero_factura,
+        f.estado_pago,
+        o.total
+      FROM Orden o
+      LEFT JOIN Cliente c ON o.cliente_id = c.id
+      LEFT JOIN Factura f ON o.id = f.orden_id
+    `;
+
+    const whereConditions = [];
+
+    if (fechaInicio) {
+      request.input('fechaInicio', sql.DateTime, new Date(fechaInicio));
+      whereConditions.push('o.fecha_orden >= @fechaInicio');
+    }
+
+    if (fechaFin) {
+      request.input('fechaFin', sql.DateTime, new Date(fechaFin));
+      whereConditions.push('o.fecha_orden <= @fechaFin');
+    }
+
+    if (whereConditions.length > 0) {
+      query += ' WHERE ' + whereConditions.join(' AND ');
+    }
+
+    query += ' ORDER BY o.fecha_orden DESC';
+
+    const result = await request.query(query);
+    const ventas = result.recordset;
+
+    // Crear un nuevo libro de Excel
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Pizzería Deliciosa';
+    workbook.created = new Date();
+
+    // Agregar una hoja para el reporte
+    const worksheet = workbook.addWorksheet('Reporte de Ventas');
+
+    // Estilo para encabezados
+    const headerStyle = {
+      font: { bold: true, color: { argb: 'FFFFFF' } },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'D72323' } },
+      alignment: { horizontal: 'center' }
+    };
+
+    // Definir columnas
+    worksheet.columns = [
+      { header: 'ID Orden', key: 'orden_id', width: 10 },
+      { header: 'Fecha', key: 'fecha', width: 20 },
+      { header: 'Cliente', key: 'cliente', width: 25 },
+      { header: 'Método de Pago', key: 'metodo_pago', width: 15 },
+      { header: 'Estado', key: 'estado', width: 15 },
+      { header: '# Factura', key: 'numero_factura', width: 15 },
+      { header: 'Estado Pago', key: 'estado_pago', width: 15 },
+      { header: 'Total (Q)', key: 'total', width: 12 }
+    ];
+
+    // Aplicar estilo a encabezados
+    worksheet.getRow(1).eachCell((cell) => {
+      cell.font = headerStyle.font;
+      cell.fill = headerStyle.fill;
+      cell.alignment = headerStyle.alignment;
+    });
+
+    // Agregar datos a la hoja
+    ventas.forEach(venta => {
+      worksheet.addRow({
+        orden_id: venta.orden_id,
+        fecha: format(new Date(venta.fecha), 'dd/MM/yyyy HH:mm'),
+        cliente: venta.cliente,
+        metodo_pago: venta.metodo_pago,
+        estado: venta.estado,
+        numero_factura: venta.numero_factura || 'N/A',
+        estado_pago: venta.estado_pago || 'N/A',
+        total: venta.total
+      });
+    });
+
+    // Aplicar formato de moneda a columna de total
+    worksheet.getColumn('total').numFmt = '"Q"#,##0.00';
+
+    // Agregar fila de totales
+    const totalRow = worksheet.rowCount + 2;
+    worksheet.addRow(['', '', '', '', '', '', 'TOTAL:', { formula: `SUM(H2:H${worksheet.rowCount})` }]);
+    worksheet.getCell(`H${totalRow}`).numFmt = '"Q"#,##0.00';
+    worksheet.getCell(`G${totalRow}`).font = { bold: true };
+    worksheet.getCell(`H${totalRow}`).font = { bold: true };
+
+    // Establecer nombre del archivo
+    const fechaActual = format(new Date(), 'yyyy-MM-dd_HHmm');
+    const filename = `Reporte_Ventas_${fechaActual}.xlsx`;
+
+    // Configurar respuesta HTTP
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+
+    // Enviar el archivo Excel
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (error) {
+    console.error('Error al generar reporte de ventas:', error);
+    res.status(500).json({ error: 'Error al generar reporte de ventas' });
+  }
+});
+
+// Endpoint para reporte de productos más vendidos
+app.get('/api/reportes/productos', async (req, res) => {
+  try {
+    // Similar al endpoint anterior, pero con diferente consulta SQL y estructura
+    const result = await sql.query`
+      SELECT 
+        p.id as pizza_id,
+        p.nombre as pizza_nombre,
+        t.nombre as tamano,
+        COUNT(*) as cantidad_vendida,
+        SUM(d.cantidad) as unidades_vendidas,
+        SUM(d.precio_unitario * d.cantidad) as ingresos_totales
+      FROM Detalle_Orden d
+      JOIN Pizza p ON d.pizza_id = p.id
+      JOIN Tamano_Pizza t ON d.tamano_id = t.id
+      JOIN Orden o ON d.orden_id = o.id
+      WHERE o.estado != 'cancelado'
+      GROUP BY p.id, p.nombre, t.nombre
+      ORDER BY unidades_vendidas DESC
+    `;
+
+    // Crear un nuevo libro de Excel
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Pizzería Deliciosa';
+    workbook.created = new Date();
+
+    // Agregar una hoja para el reporte
+    const worksheet = workbook.addWorksheet('Productos Vendidos');
+
+    // Estilo para encabezados
+    const headerStyle = {
+      font: { bold: true, color: { argb: 'FFFFFF' } },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'D72323' } },
+      alignment: { horizontal: 'center' }
+    };
+
+    // Definir columnas
+    worksheet.columns = [
+      { header: 'ID', key: 'pizza_id', width: 8 },
+      { header: 'Nombre', key: 'pizza_nombre', width: 25 },
+      { header: 'Tamaño', key: 'tamano', width: 15 },
+      { header: 'Cantidad Vendida', key: 'cantidad_vendida', width: 15 },
+      { header: 'Unidades', key: 'unidades_vendidas', width: 12 },
+      { header: 'Ingresos (Q)', key: 'ingresos_totales', width: 15 }
+    ];
+
+    // Aplicar estilo a encabezados
+    worksheet.getRow(1).eachCell((cell) => {
+      cell.font = headerStyle.font;
+      cell.fill = headerStyle.fill;
+      cell.alignment = headerStyle.alignment;
+    });
+
+    // Agregar datos a la hoja
+    result.recordset.forEach(item => {
+      worksheet.addRow({
+        pizza_id: item.pizza_id,
+        pizza_nombre: item.pizza_nombre,
+        tamano: item.tamano,
+        cantidad_vendida: item.cantidad_vendida,
+        unidades_vendidas: item.unidades_vendidas,
+        ingresos_totales: item.ingresos_totales
+      });
+    });
+
+    // Aplicar formato de moneda a columna de ingresos
+    worksheet.getColumn('ingresos_totales').numFmt = '"Q"#,##0.00';
+
+    // Agregar fila de totales
+    const totalRow = worksheet.rowCount + 2;
+    worksheet.addRow(['', '', '', 'TOTAL:',
+      { formula: `SUM(E2:E${worksheet.rowCount})` },
+      { formula: `SUM(F2:F${worksheet.rowCount})` }
+    ]);
+    worksheet.getCell(`F${totalRow}`).numFmt = '"Q"#,##0.00';
+    worksheet.getCell(`D${totalRow}`).font = { bold: true };
+    worksheet.getCell(`E${totalRow}`).font = { bold: true };
+    worksheet.getCell(`F${totalRow}`).font = { bold: true };
+
+    // Establecer nombre del archivo
+    const fechaActual = format(new Date(), 'yyyy-MM-dd_HHmm');
+    const filename = `Reporte_Productos_${fechaActual}.xlsx`;
+
+    // Configurar respuesta HTTP
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+
+    // Enviar el archivo Excel
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (error) {
+    console.error('Error al generar reporte de productos:', error);
+    res.status(500).json({ error: 'Error al generar reporte de productos' });
+  }
+});
+
+
+// ==================== Automatizacion Correo ====================
+
+
+
+const resend = new Resend('re_EmR74UWN_9Wpd4ju5egcwhueLvetKtsYd');
+// Función para enviar correo con factura
+async function enviarCorreoFactura(clienteEmail, clienteNombre, ordenId, facturaId, facturaPdf) {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'Pizzería Deliciosa <facturacion@wilson-sistemas.me>', // Cambiar a tu dominio
+      to: clienteEmail, // Ya puedes enviar a cualquier correo con tu dominio verificado
+      subject: `🍕 Tu Factura #${facturaId} - Pizzería Deliciosa`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #D72323; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="color: white; margin: 0;">Pizzería Deliciosa</h1>
+          </div>
+          <div style="padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px;">
+            <p>Hola <strong>${clienteNombre}</strong>,</p>
+            <p>¡Gracias por tu pedido en Pizzería Deliciosa! Adjunto encontrarás la factura correspondiente a tu orden #${ordenId}.</p>
+            <p>Si tienes alguna pregunta sobre tu orden o factura, no dudes en contactarnos.</p>
+            <p>¡Esperamos que disfrutes tu pizza!</p>
+            <p style="margin-top: 30px;">Saludos cordiales,</p>
+            <p><strong>El equipo de Pizzería Deliciosa</strong></p>
+          </div>
+          
+          <div style="text-align: center; padding: 10px; color: #666; font-size: 12px; border-top: 1px solid #eee; margin-top: 20px;">
+            <p>Pizzería Deliciosa | 3ra Calle 4-42 Zona 1, Chimaltenango, Guatemala</p>
+            <p>Tel: +(502) 7839-5678 | info@pizzeriadeliciosa.com</p>
+            <p>© ${new Date().getFullYear()} Pizzería Deliciosa. Todos los derechos reservados.</p>
+          </div>
+        </div>
+      `,
+      attachments: [
+        {
+          filename: `factura_${facturaId}.pdf`,
+          content: facturaPdf.toString('base64')
+        }
+      ]
+    });
+
+    if (error) {
+      console.error('Error al enviar correo de factura:', error);
+      return false;
+    }
+
+    console.log(`Correo de factura enviado a ${clienteEmail}: ${data.id}`);
+    return true;
+  } catch (error) {
+    console.error('Error al enviar correo de factura:', error);
+    return false;
+  }
+}
+
+// Añadir después de la función enviarCorreoFactura
+async function enviarConfirmacionOrden(clienteEmail, clienteNombre, ordenId, items, total, direccionEntrega) {
+  try {
+    // Crear tabla HTML con los productos
+    let tablaProductos = `
+      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <tr style="background-color: #f2f2f2;">
+          <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Producto</th>
+          <th style="padding: 10px; text-align: center; border-bottom: 1px solid #ddd;">Cantidad</th>
+          <th style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">Precio</th>
+        </tr>
+    `;
+
+    for (const item of items) {
+      tablaProductos += `
+        <tr>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.pizza_nombre} (${item.tamano_nombre || 'Regular'})</td>
+          <td style="padding: 8px; text-align: center; border-bottom: 1px solid #eee;">${item.cantidad}x</td>
+          <td style="padding: 8px; text-align: right; border-bottom: 1px solid #eee;">Q${(item.precio_unitario * item.cantidad).toFixed(2)}</td>
+        </tr>
+      `;
+    }
+
+    tablaProductos += `
+        <tr style="font-weight: bold;">
+          <td style="padding: 8px; text-align: right;" colspan="2">Total:</td>
+          <td style="padding: 8px; text-align: right;">Q${total.toFixed(2)}</td>
+        </tr>
+      </table>
+    `;
+
+    const { data, error } = await resend.emails.send({
+      from: 'Pizzería Deliciosa <pedidos@wilson-sistemas.me>', // Cambiar a tu dominio
+      to: clienteEmail, // Ya puedes enviar a cualquier correo con tu dominio verificado
+      subject: `🍕 Confirmación de tu Orden #${ordenId} - Pizzería Deliciosa`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #D72323; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="color: white; margin: 0;">¡Gracias por tu Pedido!</h1>
+          </div>
+          <div style="padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px;">
+            <p>Hola <strong>${clienteNombre}</strong>,</p>
+            <p>Hemos recibido tu orden correctamente. Aquí está el resumen de tu pedido:</p>
+            
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 6px; margin: 15px 0;">
+              <p style="margin: 5px 0;"><strong>Número de Orden:</strong> #${ordenId}</p>
+              <p style="margin: 5px 0;"><strong>Dirección de Entrega:</strong> ${direccionEntrega || 'No especificada'}</p>
+              <p style="margin: 5px 0;"><strong>Estado:</strong> Recibido</p>
+            </div>
+            
+            <h3 style="color: #D72323;">Detalle del Pedido:</h3>
+            ${tablaProductos}
+            
+            <p>Te enviaremos actualizaciones sobre el estado de tu pedido. ¡Prepárate para disfrutar de nuestras deliciosas pizzas!</p>
+            <p style="margin-top: 30px;">Saludos cordiales,</p>
+            <p><strong>El equipo de Pizzería Deliciosa</strong></p>
+          </div>
+          <div style="text-align: center; padding: 10px; color: #666; font-size: 12px; border-top: 1px solid #eee; margin-top: 20px;">
+            <p>Pizzería Deliciosa | 3ra Calle 4-42 Zona 1, Chimaltenango, Guatemala</p>
+            <p>Tel: +(502) 7839-5678 | info@pizzeriadeliciosa.com</p>
+            <p>© ${new Date().getFullYear()} Pizzería Deliciosa. Todos los derechos reservados.</p>
+          </div>
+        </div>
+      `
+    });
+
+    if (error) {
+      console.error('Error al enviar confirmación de orden:', error);
+      return false;
+    }
+
+    console.log(`Confirmación de orden enviada a ${clienteEmail}: ${data.id}`);
+    return true;
+  } catch (error) {
+    console.error('Error al enviar confirmación de orden:', error);
+    return false;
+  }
+}
+
+// Nuevo endpoint específico para enviar la factura por correo
+app.post('/api/facturas/:id/enviar-email', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Obtener la información de la factura y el cliente
+    const request = new sql.Request();
+    request.input('id', sql.Int, id);
+
+    const facturaResult = await request.query(`
+      SELECT f.id as factura_id, f.orden_id, f.numero_factura, 
+             c.email as cliente_email, c.nombre as cliente_nombre
+      FROM Factura f
+      JOIN Orden o ON f.orden_id = o.id
+      JOIN Cliente c ON o.cliente_id = c.id
+      WHERE f.id = @id
+    `);
+
+    if (facturaResult.recordset.length === 0) {
+      return res.status(404).json({ error: 'Factura no encontrada' });
+    }
+
+    const factura = facturaResult.recordset[0];
+
+    // Generar el PDF
+    const pdfBuffer = await generarPdfFactura(factura.orden_id);
+
+    // Enviar por correo
+    const emailEnviado = await enviarCorreoFactura(
+      factura.cliente_email,
+      factura.cliente_nombre,
+      factura.orden_id,
+      factura.factura_id,
+      pdfBuffer
+    );
+
+    if (emailEnviado) {
+      res.json({ success: true, message: `Factura enviada a ${factura.cliente_email}` });
+    } else {
+      res.status(500).json({ error: 'Error al enviar el correo' });
+    }
+
+  } catch (error) {
+    console.error('Error al enviar factura por correo:', error);
+    res.status(500).json({ error: 'Error al procesar la solicitud' });
+  }
+});
+
+// Función para generar el PDF (extractada del código existente)
+async function generarPdfFactura(ordenId) {
+  try {
+    // 1. Verificar si existe una factura para esta orden
+    const requestCheck = new sql.Request();
+    requestCheck.input('ordenId', sql.Int, ordenId);
+    const facturaResult = await requestCheck.query(`
+      SELECT f.id as factura_id, 
+             f.fecha_emision,
+             f.monto_total, 
+             f.estado_pago,
+             f.numero_factura,
+             o.cliente_id, 
+             c.nombre as cliente_nombre, 
+             c.email as cliente_email,
+             o.fecha_orden, 
+             o.direccion_entrega, 
+             o.telefono_contacto
+      FROM Factura f
+      JOIN Orden o ON f.orden_id = o.id
+      JOIN Cliente c ON o.cliente_id = c.id
+      WHERE f.orden_id = @ordenId
+    `);
+
+    if (facturaResult.recordset.length === 0) {
+      throw new Error('Factura no encontrada');
+    }
+
+    // 2. Obtener los detalles de la factura
+    const factura = facturaResult.recordset[0];
+
+    // 3. Obtener los items de la orden
+    const requestItems = new sql.Request();
+    requestItems.input('ordenId', sql.Int, ordenId);
+    const itemsResult = await requestItems.query(`
+      SELECT d.id as detalle_id, p.nombre as pizza_nombre, t.nombre as tamano_nombre,
+             d.cantidad, d.precio_unitario
+      FROM Detalle_Orden d
+      JOIN Pizza p ON d.pizza_id = p.id
+      JOIN Tamano_Pizza t ON d.tamano_id = t.id
+      WHERE d.orden_id = @ordenId
+    `);
+
+    const items = itemsResult.recordset;
+
+    // 4. Generar el PDF
+    const doc = new PDFDocument({ margin: 50 });
+
+    // Generar el PDF como buffer en lugar de archivo
+    return new Promise((resolve, reject) => {
+      const chunks = [];
+
+      doc.on('data', (chunk) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      // Añadir encabezado de factura
+      doc.fontSize(25).text('FACTURA', { align: 'center' });
+      doc.moveDown();
+
+      // Información de la pizzería
+      doc.fontSize(12).text('Pizzería Deliciosa', { align: 'center' });
+      doc.fontSize(10)
+        .text('3ra Calle 4-42 Zona 1, Chimaltenango, Guatemala', { align: 'center' })
+        .text('Tel: +(502) 7839-5678', { align: 'center' })
+        .text('info@pizzeriadeliciosa.com', { align: 'center' });
+
+      doc.moveDown(2);
+
+      // Detalles de la factura y cliente
+      doc.fontSize(12).text(`Factura #: ${factura.numero_factura || factura.factura_id}`, { continued: true })
+        .text(`Fecha: ${new Date(factura.fecha_emision).toLocaleDateString()}`, { align: 'right' });
+      doc.moveDown();
+
+      doc.fontSize(12).text('Cliente:');
+      doc.fontSize(10)
+        .text(`Nombre: ${factura.cliente_nombre}`)
+        .text(`Teléfono: ${factura.telefono_contacto || 'No especificado'}`)
+        .text(`Dirección: ${factura.direccion_entrega || 'No especificada'}`);
+
+      doc.moveDown(0.5);
+      doc.fontSize(10)
+        .text(`Estado de pago: ${factura.estado_pago || 'Pendiente'}`, { align: 'right' });
+      doc.moveDown(2);
+
+      // Crear tabla para los items
+      const tableTop = doc.y;
+      const itemX = 50;
+      const descriptionX = 150;
+      const quantityX = 290;
+      const priceX = 370;
+      const amountX = 450;
+
+      // Encabezados de columnas
+      doc.fontSize(10)
+        .text('Item', itemX, tableTop)
+        .text('Descripción', descriptionX, tableTop)
+        .text('Cantidad', quantityX, tableTop)
+        .text('Precio', priceX, tableTop)
+        .text('Importe', amountX, tableTop);
+
+      // Línea horizontal después de encabezados
+      doc.moveTo(50, tableTop + 15)
+        .lineTo(550, tableTop + 15)
+        .stroke();
+
+      // Añadir items
+      let y = tableTop + 25;
+      let totalAmount = 0;
+
+      items.forEach((item, i) => {
+        const itemTotal = item.cantidad * item.precio_unitario;
+        totalAmount += itemTotal;
+
+        doc.fontSize(10)
+          .text(i + 1, itemX, y)
+          .text(`${item.pizza_nombre} (${item.tamano_nombre})`, descriptionX, y)
+          .text(item.cantidad, quantityX, y)
+          .text(`Q${item.precio_unitario.toFixed(2)}`, priceX, y)
+          .text(`Q${itemTotal.toFixed(2)}`, amountX, y);
+
+        y += 20;
+
+        // Añadir otra página si es necesario
+        if (y > 700) {
+          doc.addPage();
+          y = 50;
+        }
+      });
+
+      // Línea horizontal después de items
+      doc.moveTo(50, y)
+        .lineTo(550, y)
+        .stroke();
+
+      y += 20;
+
+      // Totales
+      doc.fontSize(10)
+        .text('Subtotal:', 350, y)
+        .text(`Q${totalAmount.toFixed(2)}`, amountX, y);
+
+      y += 20;
+
+      doc.fontSize(10)
+        .text('IVA (12%):', 350, y)
+        .text(`Q${(totalAmount * 0.12).toFixed(2)}`, amountX, y);
+
+      y += 20;
+
+      doc.fontSize(12).font('Helvetica-Bold')
+        .text('TOTAL:', 350, y)
+        .text(`Q${factura.monto_total.toFixed(2)}`, amountX, y);
+
+      // Pie de página
+      doc.fontSize(10).font('Helvetica')
+        .text('Gracias por su compra!', { align: 'center' });
+
+      // Finalizar el PDF
+      doc.end();
+    });
+  } catch (error) {
+    console.error('Error generando PDF:', error);
+    throw error;
+  }
+}
+
+
+app.get('/api/test-email', async (req, res) => {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'Pizzería Deliciosa <no-reply@wilson-sistemas.me>',
+      to: 'wilsoncoc5678@gmail.com', // Tu email para pruebas
+      subject: 'Prueba de Conexión - Pizzería Deliciosa',
+      html: '<p>Este es un correo de prueba para verificar la conexión con Resend. Si recibes esto, ¡la configuración es correcta!</p>'
+    });
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json({ success: true, message: 'Correo de prueba enviado correctamente', id: data.id });
+  } catch (error) {
+    console.error('Error en prueba de correo:', error);
+    res.status(500).json({ error: 'Error al enviar correo de prueba', details: error.message });
+  }
+});
 
 // Iniciar el servidor
 app.listen(PORT, () => {

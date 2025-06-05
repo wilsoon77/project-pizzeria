@@ -80,7 +80,9 @@ const Checkout: React.FC = () => {
 
       clearCart();
       toast.success('¡Pedido realizado con éxito!');
-      navigate(`/order/${orden_id}`);
+      
+      // Redirección actualizada a la página de confirmación de orden
+      navigate('/orden-confirmacion', { state: { orden_id, total: totalCost } });
     } catch (error) {
       console.error('Error al realizar el pedido:', error);
       toast.error('Error al procesar el pedido. Inténtalo de nuevo.');
@@ -89,7 +91,7 @@ const Checkout: React.FC = () => {
     }
   };
 
-  const shippingCost = getTotalPrice() > 20 ? 0 : 3.99;
+  const shippingCost = getTotalPrice() > 100 ? 0 : 3.99;
   const totalCost = getTotalPrice() + shippingCost;
 
   return (

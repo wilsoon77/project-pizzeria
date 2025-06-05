@@ -53,7 +53,7 @@ const Menu: React.FC = () => {
           imagen: pizza.imagen_url, // Map imagen_url to imagen
           imagen_url: pizza.imagen_url, // Keep original field too
           categoria_id: pizza.categoria_id,
-          ingredientes: pizza.ingredientes,
+          //ingredientes: pizza.ingredientes,
           disponible: pizza.disponible
         }));
 

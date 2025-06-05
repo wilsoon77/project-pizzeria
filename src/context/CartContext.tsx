@@ -17,7 +17,7 @@ export interface Pizza {
   imagen?: string;        // Image URL from demo data
   imagen_url?: string;    // Image URL from database
   categoria_id: number;   // Category ID
-  ingredientes?: string;  // Ingredients list
+  //ingredientes?: string;  // Ingredients list
   disponible?: boolean;   // Availability flag
 }
 

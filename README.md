@@ -257,4 +257,4 @@ Para obtener ayuda o reportar problemas, contactar a:
 
 ---
 
-Desarrollado con ❤️ para PizzaDelicia © 2023
+Desarrollado  para PizzaDelicia © 2025

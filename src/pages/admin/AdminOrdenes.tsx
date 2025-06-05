@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, Filter, FileText, ShoppingBag, ArrowDown, ArrowUp, Eye, Download } from 'lucide-react';
+import { Search, Filter, FileText, ShoppingBag, ArrowDown, ArrowUp, Eye, Download, FileSpreadsheet, Calendar, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -10,7 +10,7 @@ interface DetalleOrden {
   orden_id: number;
   pizza_id: number;
   pizza_nombre: string;
-  tamano_id: number; // Corregido: cambiado de 'tamaño' a 'tamano_id'
+  tamano_id: number;
   cantidad: number;
   precio_unitario: number;
 }
@@ -20,7 +20,7 @@ interface Orden {
   cliente_id: number;
   cliente_nombre: string;
   fecha: string;
-  estado: string; // Cambiado de un tipo específico a string genérico
+  estado: string;
   metodo_pago: string;
   direccion_entrega: string;
   telefono_contacto: string;
@@ -37,54 +37,77 @@ const AdminOrdenes: React.FC = () => {
   const [ordenarPor, setOrdenarPor] = useState<string>('fecha');
   const [ordenDesc, setOrdenDesc] = useState<boolean>(true);
   const [facturasGeneradas, setFacturasGeneradas] = useState<Record<number, boolean>>({});
+  const [filtroFechaDesde, setFiltroFechaDesde] = useState<string>('');
+  const [filtroFechaHasta, setFiltroFechaHasta] = useState<string>('');
 
   useEffect(() => {
     fetchOrdenes();
   }, []);
 
-const fetchOrdenes = async () => {
-  try {
-    setLoading(true);
-    const response = await axios.get(`${API_URL}/ordenes`);
-    
-    // Transformar los datos para corregir el formato
-    const ordenesFormateadas = response.data.map((orden: any) => {
-      // Corregir el campo estado que viene como array
-      const estadoCorregido = Array.isArray(orden.estado) 
-        ? orden.estado[0] // Tomar el primer valor si es un array
-        : (orden.estado || 'desconocido');
-        
-      return {
-        ...orden,
-        estado: estadoCorregido
-      };
-    });
-    
-    console.log('Órdenes formateadas:', ordenesFormateadas[0]);
-    setOrdenes(ordenesFormateadas);
-  } catch (error) {
-    console.error('Error al cargar las órdenes:', error);
-    toast.error('No se pudieron cargar las órdenes');
-  } finally {
-    setLoading(false);
-  }
-};
+  const fetchOrdenes = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API_URL}/ordenes`);
+
+      // Transformar los datos para corregir el formato
+      const ordenesFormateadas = response.data.map((orden: any) => {
+        // Corregir el campo estado que viene como array
+        const estadoCorregido = Array.isArray(orden.estado)
+          ? orden.estado[0] // Tomar el primer valor si es un array
+          : (orden.estado || 'desconocido');
+
+        return {
+          ...orden,
+          estado: estadoCorregido
+        };
+      });
+
+      console.log('Órdenes formateadas:', ordenesFormateadas[0]);
+      setOrdenes(ordenesFormateadas);
+      
+      // Verificar qué órdenes ya tienen facturas generadas
+      checkFacturasGeneradas(ordenesFormateadas);
+    } catch (error) {
+      console.error('Error al cargar las órdenes:', error);
+      toast.error('No se pudieron cargar las órdenes');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkFacturasGeneradas = async (ordenes: Orden[]) => {
+    try {
+      // Obtener todas las facturas
+      const response = await axios.get(`${API_URL}/facturas`);
+      const facturas = response.data;
+      
+      // Crear un objeto con las órdenes que ya tienen factura
+      const facturasMap: Record<number, boolean> = {};
+      facturas.forEach((factura: any) => {
+        facturasMap[factura.orden_id] = true;
+      });
+      
+      setFacturasGeneradas(facturasMap);
+    } catch (error) {
+      console.error('Error al verificar facturas generadas:', error);
+    }
+  };
 
   const handleActualizarEstado = async (orden_id: number, nuevoEstado: Orden['estado']) => {
     try {
       const response = await axios.patch(`${API_URL}/ordenes/${orden_id}`, { estado: nuevoEstado });
-      
+
       // Actualizar el estado en el array local
-      const ordenesActualizadas = ordenes.map(orden => 
+      const ordenesActualizadas = ordenes.map(orden =>
         orden.orden_id === orden_id ? { ...orden, estado: nuevoEstado } : orden
       );
-      
+
       setOrdenes(ordenesActualizadas);
-      
+
       if (selectedOrden && selectedOrden.orden_id === orden_id) {
         setSelectedOrden({ ...selectedOrden, estado: nuevoEstado });
       }
-      
+
       toast.success(`Estado de la orden #${orden_id} actualizado a: ${formatEstado(nuevoEstado)}`);
     } catch (error) {
       console.error('Error al actualizar el estado:', error);
@@ -92,12 +115,10 @@ const fetchOrdenes = async () => {
     }
   };
 
-  
-
   const handleGenerarFactura = async (orden_id: number) => {
     try {
       const response = await axios.post(`${API_URL}/facturas/generar/${orden_id}`);
-      
+
       // Si la operación fue exitosa
       if (response.data) {
         // Si ya existía una factura
@@ -107,7 +128,7 @@ const fetchOrdenes = async () => {
           // Si se generó una nueva factura
           toast.success(`Factura #${response.data.factura_id} generada por ${response.data.monto_total.toFixed(2)}Q`);
         }
-        
+
         // Marcar esta orden como facturada en el estado local
         setFacturasGeneradas(prev => ({
           ...prev,
@@ -120,22 +141,136 @@ const fetchOrdenes = async () => {
     }
   };
 
+  const handleDescargarFactura = async (orden_id: number) => {
+    try {
+      // Indicar al usuario que la descarga está en progreso
+      toast.loading('Preparando factura para descargar...', { id: 'download-toast' });
+
+      // Realizar la solicitud para descargar la factura como un blob
+      const response = await axios.get(`${API_URL}/facturas/descargar/${orden_id}`, {
+        responseType: 'blob'
+      });
+
+      // Crear un objeto URL para el blob
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+
+      // Crear un enlace temporal para descarga
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `factura_orden_${orden_id}.pdf`);
+
+      // Añadir al documento, hacer clic y luego eliminar
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Liberar el objeto URL
+      window.URL.revokeObjectURL(url);
+
+      // Mostrar mensaje de éxito
+      toast.success('Factura descargada correctamente', { id: 'download-toast' });
+    } catch (error) {
+      console.error('Error al descargar la factura:', error);
+
+      // Si el error es 404, la factura no se ha generado primero
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        toast.error('Primero debe generar la factura', { id: 'download-toast' });
+      } else {
+        toast.error('Error al descargar la factura', { id: 'download-toast' });
+      }
+    }
+  };
+
+  // Nueva función para enviar factura por email
+  const handleEnviarFacturaPorEmail = async (orden_id: number) => {
+    try {
+      // Primero verificamos si la factura está generada
+      if (!facturasGeneradas[orden_id]) {
+        toast.error('Primero debes generar la factura');
+        return;
+      }
+      
+      toast.loading('Enviando factura por email...', { id: 'email-toast' });
+      
+      // Obtener el ID de factura
+      const facturaResponse = await axios.get(`${API_URL}/facturas`, {
+        params: { orden_id }
+      });
+      
+      const facturaId = facturaResponse.data.find((f: any) => f.orden_id === orden_id)?.id;
+      
+      if (!facturaId) {
+        throw new Error('No se pudo encontrar la factura');
+      }
+      
+      // Enviar la factura por email
+      const response = await axios.post(`${API_URL}/facturas/${facturaId}/enviar-email`);
+      
+      if (response.data.success) {
+        toast.success('Factura enviada por email correctamente', { id: 'email-toast' });
+      } else {
+        throw new Error(response.data.error || 'Error al enviar el email');
+      }
+    } catch (error) {
+      console.error('Error al enviar factura por email:', error);
+      toast.error('Error al enviar la factura por email', { id: 'email-toast' });
+    }
+  };
+
+  // Función para generar reportes
+  const handleGenerarReporte = async (tipo: 'ventas' | 'productos') => {
+    try {
+      toast.loading(`Generando reporte de ${tipo}...`, { id: 'reporte-toast' });
+      
+      // Construir los parámetros de consulta para filtros opcionales
+      const queryParams = new URLSearchParams();
+      if (filtroFechaDesde) queryParams.append('fechaInicio', filtroFechaDesde);
+      if (filtroFechaHasta) queryParams.append('fechaFin', filtroFechaHasta);
+      
+      // Hacer la solicitud al servidor
+      const response = await axios.get(`${API_URL}/reportes/${tipo}?${queryParams.toString()}`, {
+        responseType: 'blob'
+      });
+      
+      // Crear objeto URL para el blob
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      
+      // Crear enlace de descarga
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Reporte_${tipo}_${new Date().toISOString().split('T')[0]}.xlsx`);
+      
+      // Añadir al documento, simular clic y limpiar
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Liberar el objeto URL
+      window.URL.revokeObjectURL(url);
+      
+      toast.success(`Reporte de ${tipo} generado correctamente`, { id: 'reporte-toast' });
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error(`Error al generar reporte de ${tipo}`, { id: 'reporte-toast' });
+    }
+  };
+
   const filteredOrdenes = ordenes
     .filter(orden => {
       // Filtro por búsqueda
-      const matchesSearch = 
+      const matchesSearch =
         orden.cliente_nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         orden.orden_id.toString().includes(searchTerm);
-      
+
       // Filtro por estado
       const matchesEstado = filtroEstado === 'todos' || orden.estado === filtroEstado;
-      
+
       return matchesSearch && matchesEstado;
     })
     .sort((a, b) => {
       // Ordenamiento
       if (ordenarPor === 'fecha') {
-        return ordenDesc 
+        return ordenDesc
           ? new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
           : new Date(a.fecha).getTime() - new Date(b.fecha).getTime();
       } else if (ordenarPor === 'total') {
@@ -146,54 +281,74 @@ const fetchOrdenes = async () => {
       return 0;
     });
 
-  // Función para formatear la fecha
-  const formatFecha = (fechaStr: string) => {
-    const fecha = new Date(fechaStr);
-    return fecha.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+
+// Reemplaza la función formatFecha con esta versión que mantiene la hora original:
+
+const formatFecha = (fechaStr: string) => {
+  if (!fechaStr) return 'Fecha desconocida';
+  
+  // Extraer directamente los componentes de la cadena ISO
+  // "2025-06-03T23:20:54.017Z" -> año:2025, mes:06, día:03, hora:23, minuto:20
+  try {
+    // Extraer los componentes de la fecha UTC directamente del string
+    const año = fechaStr.substring(0, 4);
+    const mes = fechaStr.substring(5, 7);
+    const día = fechaStr.substring(8, 10);
+    const hora = parseInt(fechaStr.substring(11, 13));
+    const minuto = fechaStr.substring(14, 16);
+    
+    // Convertir hora de 24h a 12h
+    const hora12 = hora % 12 || 12;
+    const ampm = hora >= 12 ? 'p.m.' : 'a.m.';
+    
+    // Formatear hora con cero inicial si es necesario
+    const hora12Str = hora12.toString().padStart(2, '0');
+    
+    // Devolver en formato "DD/MM/YYYY, hh:mm a.m./p.m."
+    return `${día}/${mes}/${año}, ${hora12Str}:${minuto} ${ampm}`;
+  } catch (e) {
+    console.error('Error al formatear fecha:', e);
+    return 'Fecha inválida';
+  }
+};
+
+
+  // Función para obtener el color del estado
+  const getEstadoColor = (estado: Orden['estado']) => {
+    if (!estado || typeof estado !== 'string') {
+      return 'bg-gray-100 text-gray-800';
+    }
+
+    switch (estado.toLowerCase()) {
+      case 'recibido':
+        return 'bg-blue-100 text-blue-800';
+      case 'en preparacion':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'en camino':
+        return 'bg-indigo-100 text-indigo-800';
+      case 'entregado':
+        return 'bg-green-100 text-green-800';
+      case 'cancelado':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
-// Función para obtener el color del estado
-const getEstadoColor = (estado: Orden['estado']) => {
-  if (!estado || typeof estado !== 'string') {
-    return 'bg-gray-100 text-gray-800';
-  }
-  
-  switch (estado.toLowerCase()) {
-    case 'recibido':
-      return 'bg-blue-100 text-blue-800';
-    case 'en preparacion':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'en camino':
-      return 'bg-indigo-100 text-indigo-800';
-    case 'entregado':
-      return 'bg-green-100 text-green-800';
-    case 'cancelado':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-};
+  // Función para formatear el estado para mostrar
+  const formatEstado = (estado: Orden['estado']) => {
+    // Verificar que estado sea un string
+    if (!estado || typeof estado !== 'string') {
+      return 'Desconocido';
+    }
 
- // Función para formatear el estado para mostrar
-const formatEstado = (estado: Orden['estado']) => {
-  // Verificar que estado sea un string
-  if (!estado || typeof estado !== 'string') {
-    return 'Desconocido';
-  }
-  
-  switch (estado.toLowerCase()) {
-    case 'en preparacion':
-      return 'En preparación';
-    default:
-      return estado.charAt(0).toUpperCase() + estado.slice(1);
-  }
-};
+    switch (estado.toLowerCase()) {
+      case 'en preparacion':
+        return 'En preparación';
+      default:
+        return estado.charAt(0).toUpperCase() + estado.slice(1);
+    }
+  };
 
   if (loading) {
     return (
@@ -228,7 +383,7 @@ const formatEstado = (estado: Orden['estado']) => {
               <option value="cancelado">Cancelado</option>
             </select>
           </div>
-          
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <input
@@ -240,7 +395,7 @@ const formatEstado = (estado: Orden['estado']) => {
             />
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-4">
           <span className="text-sm text-gray-500">Ordenar por:</span>
           <select
@@ -252,8 +407,8 @@ const formatEstado = (estado: Orden['estado']) => {
             <option value="total">Total</option>
             <option value="orden_id">Número de orden</option>
           </select>
-          
-          <button 
+
+          <button
             onClick={() => setOrdenDesc(!ordenDesc)}
             className="p-2 border border-gray-300 rounded-md hover:bg-gray-100"
             title={ordenDesc ? "Orden descendente" : "Orden ascendente"}
@@ -261,6 +416,53 @@ const formatEstado = (estado: Orden['estado']) => {
             {ordenDesc ? <ArrowDown size={18} /> : <ArrowUp size={18} />}
           </button>
         </div>
+      </div>
+
+      {/* Filtro de fechas para reportes */}
+      <div className="mb-4 flex flex-wrap gap-4 items-center">
+        <div className="flex items-center gap-2">
+          <Calendar size={18} className="text-gray-400" />
+          <span className="text-sm font-medium">Filtrar reportes por fechas:</span>
+        </div>
+        
+        <div className="flex gap-2 items-center">
+          <label className="text-sm text-gray-500">Desde:</label>
+          <input
+            type="date"
+            value={filtroFechaDesde}
+            onChange={(e) => setFiltroFechaDesde(e.target.value)}
+            className="border border-gray-300 rounded px-2 py-1 text-sm"
+          />
+        </div>
+        
+        <div className="flex gap-2 items-center">
+          <label className="text-sm text-gray-500">Hasta:</label>
+          <input
+            type="date"
+            value={filtroFechaHasta}
+            onChange={(e) => setFiltroFechaHasta(e.target.value)}
+            className="border border-gray-300 rounded px-2 py-1 text-sm"
+          />
+        </div>
+      </div>
+
+      {/* Botones para reportes */}
+      <div className="mb-6 flex flex-wrap gap-2">
+        <button
+          onClick={() => handleGenerarReporte('ventas')}
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex items-center text-sm"
+        >
+          <FileSpreadsheet size={18} className="mr-2" />
+          Reporte de Ventas
+        </button>
+        
+        <button
+          onClick={() => handleGenerarReporte('productos')}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center text-sm"
+        >
+          <ShoppingBag size={18} className="mr-2" />
+          Reporte de Productos Vendidos
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -281,8 +483,8 @@ const formatEstado = (estado: Orden['estado']) => {
               <tbody className="divide-y divide-gray-200">
                 {filteredOrdenes.length > 0 ? (
                   filteredOrdenes.map((orden) => (
-                    <tr 
-                      key={orden.orden_id} 
+                    <tr
+                      key={orden.orden_id}
                       className={`hover:bg-gray-50 ${selectedOrden?.orden_id === orden.orden_id ? 'bg-blue-50' : ''}`}
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -304,14 +506,14 @@ const formatEstado = (estado: Orden['estado']) => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex space-x-2">
-                          <button 
+                          <button
                             onClick={() => setSelectedOrden(orden)}
                             className="text-blue-600 hover:text-blue-800 p-1"
                             title="Ver detalles"
                           >
                             <Eye size={18} />
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleGenerarFactura(orden.orden_id)}
                             className="text-green-600 hover:text-green-800 p-1"
                             title="Generar factura"
@@ -340,7 +542,7 @@ const formatEstado = (estado: Orden['estado']) => {
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold">Orden #{selectedOrden.orden_id}</h2>
-                <button 
+                <button
                   onClick={() => setSelectedOrden(null)}
                   className="text-gray-500 hover:text-gray-700"
                 >
@@ -440,16 +642,37 @@ const formatEstado = (estado: Orden['estado']) => {
                 </div>
               </div>
 
-              <div>
+              <div className="space-y-3">
+                {/* Primer botón para generar la factura en la base de datos */}
                 <button
                   onClick={() => handleGenerarFactura(selectedOrden.orden_id)}
                   className="btn-primary w-full flex items-center justify-center"
                   disabled={facturasGeneradas[selectedOrden.orden_id]}
                 >
+                  <FileText size={18} className="mr-2" />
+                  {facturasGeneradas[selectedOrden.orden_id]
+                    ? 'Factura registrada'
+                    : 'Registrar factura'}
+                </button>
+
+                {/* Segundo botón para descargar el PDF */}
+                <button
+                  onClick={() => handleDescargarFactura(selectedOrden.orden_id)}
+                  className="w-full flex items-center justify-center bg-white text-[#D72323] border border-[#D72323] py-2 px-4 rounded font-medium transition-all hover:bg-[#FFEAEA] disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!facturasGeneradas[selectedOrden.orden_id]}
+                >
                   <Download size={18} className="mr-2" />
-                  {facturasGeneradas[selectedOrden.orden_id] 
-                    ? 'Factura ya generada' 
-                    : 'Generar factura'}
+                  Descargar factura PDF
+                </button>
+
+                {/* Nuevo botón para enviar factura por email */}
+                <button
+                  onClick={() => handleEnviarFacturaPorEmail(selectedOrden.orden_id)}
+                  className="w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!facturasGeneradas[selectedOrden.orden_id]}
+                >
+                  <Mail size={18} className="mr-2" />
+                  Enviar factura por email
                 </button>
               </div>
             </div>

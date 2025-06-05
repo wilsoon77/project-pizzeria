@@ -143,7 +143,7 @@ const Cart: React.FC = () => {
             </Link>
             
             <div className="mt-6 text-xs text-gray-500">
-              <p>* Los gastos de envío son gratuitos para pedidos superiores a Q20.</p>
+              <p>* Los gastos de envío son gratuitos para pedidos superiores a Q100.</p>
               <p>* Los precios incluyen IVA.</p>
             </div>
           </div>

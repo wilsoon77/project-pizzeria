@@ -14,7 +14,7 @@ const Home: React.FC = () => {
                 Las mejores pizzas artesanales de la ciudad
               </h1>
               <p className="text-lg mb-8">
-                Descubre nuestras deliciosas pizzas, elaboradas con ingredientes frescos y de la mejor calidad. ¡Un sabor que no olvidarás!
+                Descubre nuestras deliciosas pizzas, elaboradas con ingredientes frescos y de la mejor calidad. ¡Sabor auténtico en cada bocado!"
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link to="/menu" className="btn bg-white text-[#D72323] hover:bg-gray-100">
@@ -90,7 +90,7 @@ const Home: React.FC = () => {
             <div className="pizza-card">
               <div className="relative h-48 overflow-hidden">
                 <img 
-                  src="https://images.pexels.com/photos/825661/pexels-photo-825661.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" 
+                  src="https://images.unsplash.com/photo-1593560708920-61dd98c46a4e" 
                   alt="Pizza Margarita" 
                   className="w-full h-full object-cover"
                 />
@@ -107,7 +107,7 @@ const Home: React.FC = () => {
                 <h3 className="text-xl font-bold">Margarita Clásica</h3>
                 <p className="text-gray-600 my-2">Salsa de tomate, mozzarella fresca y albahaca.</p>
                 <div className="flex justify-between items-center mt-4">
-                  <p className="text-xl font-bold">Q8.99</p>
+                  <p className="text-xl font-bold">Q70.12</p>
                   <Link to="/menu" className="btn-primary text-sm">
                     Añadir al carrito
                   </Link>
@@ -118,7 +118,7 @@ const Home: React.FC = () => {
             <div className="pizza-card">
               <div className="relative h-48 overflow-hidden">
                 <img 
-                  src="https://images.pexels.com/photos/5792329/pexels-photo-5792329.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" 
+                  src="https://images.unsplash.com/photo-1628840042765-356cda07504e" 
                   alt="Pizza Pepperoni" 
                   className="w-full h-full object-cover"
                 />
@@ -135,7 +135,7 @@ const Home: React.FC = () => {
                 <h3 className="text-xl font-bold">Pepperoni Especial</h3>
                 <p className="text-gray-600 my-2">Salsa de tomate, mozzarella, pepperoni italiano.</p>
                 <div className="flex justify-between items-center mt-4">
-                  <p className="text-xl font-bold">Q10.99</p>
+                  <p className="text-xl font-bold">Q85.72</p>
                   <Link to="/menu" className="btn-primary text-sm">
                     Añadir al carrito
                   </Link>
@@ -146,7 +146,7 @@ const Home: React.FC = () => {
             <div className="pizza-card">
               <div className="relative h-48 overflow-hidden">
                 <img 
-                  src="https://images.pexels.com/photos/2147491/pexels-photo-2147491.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" 
+                  src="https://images.unsplash.com/photo-1566843971939-1fe9e277a0c0" 
                   alt="Pizza 4 Quesos" 
                   className="w-full h-full object-cover"
                 />
@@ -163,7 +163,7 @@ const Home: React.FC = () => {
                 <h3 className="text-xl font-bold">Cuatro Quesos</h3>
                 <p className="text-gray-600 my-2">Mozzarella, gorgonzola, parmesano y provolone.</p>
                 <div className="flex justify-between items-center mt-4">
-                  <p className="text-xl font-bold">Q12.99</p>
+                  <p className="text-xl font-bold">Q101.32</p>
                   <Link to="/menu" className="btn-primary text-sm">
                     Añadir al carrito
                   </Link>
@@ -189,7 +189,7 @@ const Home: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-xl">Entrega gratuita</h3>
-                  <p>En pedidos superiores a Q20</p>
+                  <p>En pedidos superiores a Q100</p>
                 </div>
               </div>
               <div className="flex items-center space-x-4">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Phone, Mail, MapPin, Clock, Instagram, Facebook, Twitter } from 'lucide-react';
+import { Phone, Mail, MapPin, Clock, Instagram, Facebook, Twitter, Youtube } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Footer: React.FC = () => {
@@ -12,16 +12,16 @@ const Footer: React.FC = () => {
             <h3 className="text-xl font-bold mb-4">Contacto</h3>
             <ul className="space-y-3">
               <li className="flex items-center">
-                <Phone size={18} className="mr-2 text-[#D72323]" />
-                <span>+34 555 123 456</span>
+                <Phone size={20} className="mr-2 text-[#D72323]" />
+                <span>+(502) 7839-5678</span>
               </li>
               <li className="flex items-center">
                 <Mail size={18} className="mr-2 text-[#D72323]" />
                 <span>info@pizzadelicia.com</span>
               </li>
-              <li className="flex items-start">
-                <MapPin size={18} className="mr-2 mt-1 text-[#D72323]" />
-                <span>Calle Principal 123, Madrid, España</span>
+             <li className="flex items-start">
+                <MapPin size={20} className="mr-2 mt-0.5 min-w-[20px] text-[#D72323]" />
+                <span>3ra Calle 4-42 Zona 1, Chimaltenango, Guatemala</span>
               </li>
               <li className="flex items-center">
                 <Clock size={18} className="mr-2 text-[#D72323]" />
@@ -62,6 +62,9 @@ const Footer: React.FC = () => {
               <a href="#" className="bg-white text-gray-900 hover:bg-[#D72323] hover:text-white p-2 rounded-full transition-colors">
                 <Twitter size={20} />
               </a>
+              <a href="#" className="bg-white text-gray-900 hover:bg-[#D72323] hover:text-white p-2 rounded-full transition-colors">
+                <Youtube size={20} />
+              </a>
             </div>
             <p className="mt-4">Mantente actualizado con nuestras últimas promociones y novedades.</p>
           </div>
@@ -88,7 +91,7 @@ const Footer: React.FC = () => {
 
         <div className="border-t border-gray-700 mt-8 pt-6">
           <p className="text-center text-gray-400">
-            &copy; {new Date().getFullYear()} PizzaDelicia. Todos los derechos reservados.
+            &copy; {new Date().getFullYear()} Wilson - PizzaDelicia. Todos los derechos reservados.
           </p>
         </div>
       </div>
