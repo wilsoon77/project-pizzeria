@@ -20,7 +20,6 @@ El sistema utiliza una arquitectura cliente-servidor con las siguientes componen
 - **Runtime:** Node.js v16+
 - **Framework:** Express.js
 - **Base de Datos:** SQL Server
-- **ORM:** No utiliza ORM, usa consultas SQL nativas con el paquete mssql
 - **Generación de PDFs:** PDFKit
 - **Correo Electrónico:** Resend API
 - **Exportación de Datos:** ExcelJS para reportes
@@ -34,37 +33,18 @@ El sistema utiliza una arquitectura cliente-servidor con las siguientes componen
 
 ```
 pizzeria-online/
-├── public/                          # Archivos estáticos
-│   ├── images/                      # Imágenes y recursos gráficos
-│   └── favicon.ico                  # Favicon del sitio
 ├── src/                             # Código fuente del frontend
 │   ├── api/                         # Funciones para llamadas a la API
-│   │   ├── authApi.ts               # API de autenticación
-│   │   ├── pizzaApi.ts              # API de gestión de pizzas
-│   │   ├── ordenesApi.ts            # API de órdenes
-│   │   ├── facturasApi.ts           # API de facturas
-│   │   ├── statsApi.ts              # API de estadísticas
-│   │   └── index.ts                 # Exportaciones centralizadas
+│   │   └── statsApi.ts              # API de estadísticas
 │   ├── components/                  # Componentes reutilizables
 │   │   ├── layout/                  # Componentes de estructura
 │   │   │   ├── Navbar.tsx           # Barra de navegación
 │   │   │   ├── Footer.tsx           # Pie de página
 │   │   │   └── Layout.tsx           # Estructura principal
-│   │   ├── ui/                      # Componentes de interfaz
-│   │   │   ├── Button.tsx           # Botón reutilizable
-│   │   │   ├── Input.tsx            # Input personalizado
-│   │   │   └── Select.tsx           # Select personalizado
-│   │   ├── cart/                    # Componentes del carrito
-│   │   ├── admin/                   # Componentes exclusivos del admin
-│   │   └── shared/                  # Componentes compartidos
 │   ├── context/                     # Contextos de React
 │   │   ├── AuthContext.tsx          # Contexto de autenticación
 │   │   ├── CartContext.tsx          # Contexto del carrito
 │   │   └── UIContext.tsx            # Contexto de UI (temas, etc)
-│   ├── hooks/                       # Hooks personalizados
-│   │   ├── useAuth.ts               # Hook para autenticación
-│   │   ├── useCart.ts               # Hook para carrito
-│   │   └── useDebounce.ts           # Hook para debounce
 │   ├── pages/                       # Páginas de la aplicación
 │   │   ├── Home.tsx                 # Página principal
 │   │   ├── Menu.tsx                 # Página de menú
@@ -79,49 +59,18 @@ pizzeria-online/
 │   │       ├── AdminOrdenes.tsx     # Gestión de órdenes
 │   │       ├── AdminClientes.tsx    # Gestión de clientes
 │   │       └── AdminLogin.tsx       # Login del admin
-│   ├── types/                       # Definiciones de tipos
-│   │   ├── pizza.types.ts           # Tipos para pizzas
-│   │   ├── order.types.ts           # Tipos para órdenes
-│   │   └── user.types.ts            # Tipos para usuarios
-│   ├── utils/                       # Utilidades
-│   │   ├── formatters.ts            # Formateadores (fecha, moneda)
-│   │   ├── validators.ts            # Validadores de formularios
-│   │   └── api.ts                   # Configuración base de Axios
 │   ├── App.tsx                      # Componente raíz
 │   ├── main.tsx                     # Punto de entrada
 │   └── index.css                    # Estilos globales
 ├── server/                          # Código del servidor
-│   ├── controllers/                 # Controladores de la API
-│   │   ├── authController.js        # Controlador de autenticación
-│   │   ├── pizzaController.js       # Controlador de pizzas
-│   │   ├── ordenController.js       # Controlador de órdenes
-│   │   ├── facturaController.js     # Controlador de facturas
-│   │   └── statsController.js       # Controlador de estadísticas
-│   ├── middleware/                  # Middlewares
-│   │   ├── auth.js                  # Middleware de autenticación
-│   │   ├── error.js                 # Manejo de errores
-│   │   └── validators.js            # Validación de datos
-│   ├── utils/                       # Utilidades del servidor
-│   │   ├── database.js              # Configuración de BD
-│   │   ├── email.js                 # Funciones de correo
-│   │   ├── pdf.js                   # Generación de PDFs
-│   │   └── excel.js                 # Generación de Excel
-│   ├── routes/                      # Rutas de la API
-│   │   ├── auth.js                  # Rutas de autenticación
-│   │   ├── pizzas.js                # Rutas de pizzas
-│   │   ├── ordenes.js               # Rutas de órdenes
-│   │   ├── facturas.js              # Rutas de facturas
-│   │   └── stats.js                 # Rutas de estadísticas
 │   ├── config.js                    # Configuración del servidor
 │   └── index.js                     # Punto de entrada del servidor
-├── database/                        # Scripts SQL
-│   ├── 01_create_database.sql       # Creación de base de datos
-│   ├── 02_create_tables.sql         # Creación de tablas
-│   └── 03_initial_data.sql          # Datos iniciales
+├── database/                        
+│   └── db.sql                       # Scripts SQL 
 ├── documentation/                   # Documentación del proyecto
 │   ├── Manual_Tecnico.md            # Este archivo
 │   └── Manual_Usuario.md            # Manual de usuario
-├── .env.example                     # Ejemplo de variables de entorno
+├── .env                             # Variables de entorno
 ├── package.json                     # Dependencias
 ├── tsconfig.json                    # Configuración TypeScript
 ├── vite.config.ts                   # Configuración Vite
@@ -132,49 +81,77 @@ pizzeria-online/
 
 ### Diagrama Entidad-Relación
 
+
 ```
-+---------------+       +----------------+       +--------------+
-|   Categoria   |       |     Pizza      |       |    Tamaño    |
-+---------------+       +----------------+       +--------------+
-| id            |<----->| id             |<----->| id           |
-| nombre        |       | nombre         |       | nombre       |
-| descripcion   |       | descripcion    |       | factor_precio|
-+---------------+       | precio_base    |       +--------------+
-                        | categoria_id   |
-                        | imagen_url     |
-                        | disponible     |
-                        +----------------+
-                                |
-                                |
-                        +----------------+       +-------------+
-                        | Detalle_Orden  |       |   Orden     |
-                        +----------------+       +-------------+
-                        | id             |<----->| id          |
-                        | orden_id       |       | cliente_id  |
-                        | pizza_id       |       | fecha       |
-                        | tamano_id      |       | estado      |
-                        | cantidad       |       | direccion   |
-                        | precio_unitario|       | telefono    |
-                        | subtotal       |       | metodo_pago |
-                        +----------------+       | total       |
-                                                 +-------------+
-                                                        |
-                          +--------------+              |
-                          |   Factura    |              |
-                          +--------------+              |
-                          | id           |<-------------+
-                          | orden_id     |
-                          | fecha        |              +-------------+
-                          | monto_total  |              |   Cliente   |
-                          | numero_factura|             +-------------+
-                          | estado_pago  |<-------------| id          |
-                          | metodo_pago  |              | nombre      |
-                          +--------------+              | email       |
-                                                        | password    |
-                                                        | direccion   |
-                                                        | telefono    |
-                                                        | rol         |
-                                                        +-------------+
+mermaid
+---
+config:
+  theme: neo-dark
+---
+erDiagram
+    CATEGORIA_PIZZA ||--o{ PIZZA : "pertenece_a"
+    PIZZA ||--o{ DETALLE_ORDEN : "contiene"
+    TAMANO_PIZZA ||--o{ DETALLE_ORDEN : "define_tamano"
+    CLIENTE ||--o{ ORDEN : "realiza"
+    ORDEN ||--o{ DETALLE_ORDEN : "incluye"
+    ORDEN ||--o| FACTURA : "genera"
+    CATEGORIA_PIZZA {
+        int id PK
+        string nombre
+        string descripcion
+    }
+    PIZZA {
+        int id PK
+        string nombre
+        string descripcion
+        decimal precio_base
+        int categoria_id FK
+        string imagen_url
+        bool disponible
+    }
+    TAMANO_PIZZA {
+        int id PK
+        string nombre
+        decimal factor_precio
+    }
+    CLIENTE {
+        int id PK
+        string nombre
+        string email UK
+        string password
+        string direccion
+        string telefono
+        string rol
+    }
+    ORDEN {
+        int id PK
+        int cliente_id FK
+        datetime fecha_orden
+        string estado
+        string direccion_entrega
+        string telefono_contacto
+        string metodo_pago
+        decimal total
+    }
+    DETALLE_ORDEN {
+        int id PK
+        int orden_id FK
+        int pizza_id FK
+        int tamano_id FK
+        int cantidad
+        decimal precio_unitario
+        decimal subtotal
+    }
+    FACTURA {
+        int id PK
+        int orden_id FK
+        datetime fecha_emision
+        decimal monto_total
+        string numero_factura UK
+        string estado_pago
+        string metodo_pago
+    }
+
 ```
 
 ### Descripción de Tablas
@@ -199,7 +176,7 @@ Contiene la información de todas las pizzas.
 | precio_base | DECIMAL(10,2)| Precio base de la pizza        |
 | categoria_id| INT         | ID de la categoría (FK)         |
 | imagen_url  | VARCHAR(255)| URL de la imagen                |
-| disponible  | BIT         | Indica si está disponible       |
+| disponible  | BOL         | Indica si está disponible       |
 
 #### Tabla: Tamaño_Pizza
 Define los tamaños disponibles para las pizzas.
@@ -316,11 +293,11 @@ Registra las facturas generadas.
   [
     {
       "id": 1,
-      "nombre": "Margherita",
+      "nombre": "pizza",
       "descripcion": "Tomate, mozzarella, albahaca",
       "precio_base": 85.00,
       "categoria_id": 1,
-      "imagen_url": "/images/pizzas/margherita.jpg",
+      "imagen_url": "www.imagen.png",
       "disponible": true
     }
   ]
@@ -446,7 +423,7 @@ const authenticateToken = (req, res, next) => {
   }
 
   try {
-    // En un entorno real usaríamos JWT
+    
     const decodedToken = validateToken(token);
     req.user = decodedToken;
     next();
@@ -575,15 +552,15 @@ PORT=5000
 NODE_ENV=development
 
 # Base de Datos
-DB_USER=tu_usuario
-DB_PASSWORD=tu_contraseña
-DB_NAME=pizzeriaDB
+DB_USER=sa
+DB_PASSWORD=sql1234
+DB_NAME=pizzeria
 DB_SERVER=localhost
-DB_PORT=1433
+DB_PORT=5000
 
 # Servicio de Email
-RESEND_API_KEY=tu_api_key_de_resend
-EMAIL_FROM=facturacion@wilson-sistemas.me
+RESEND_API_KEY= re_EmR74UWN_9Wpd4ju5egcwhueLvetKtsYd
+EMAIL_FROM= facturacion@wilson-sistemas.me
 
 # Frontend
 VITE_API_URL=http://localhost:5000/api
@@ -612,17 +589,17 @@ VITE_API_URL=http://localhost:5000/api
 3. **Creación de la Base de Datos**
    - Abrir SSMS
    - Conectar con credenciales de administrador
-   - Ejecutar el script de creación de base de datos (`/database/01_create_database.sql`)
-   - Ejecutar los scripts de creación de tablas (`/database/02_create_tables.sql`)
-   - Ejecutar el script de datos iniciales (`/database/03_initial_data.sql`)
+   - Ejecutar el script de creación de base de datos (`/database/db.sql`)
+   - Ejecutar los scripts de creación de tablas (`/database/db.sql`)
+   - Ejecutar el script de datos iniciales (`/database/db.sql`)
 
 4. **Configuración de Usuario**
    ```sql
    -- Crear login
-   CREATE LOGIN pizzeria_user WITH PASSWORD = 'tu_contraseña';
+   CREATE LOGIN pizzeria_user WITH PASSWORD = 'sql1234';
    
    -- Crear usuario y asignar permisos
-   USE pizzeriaDB;
+   USE pizzeria;
    CREATE USER pizzeria_user FOR LOGIN pizzeria_user;
    EXEC sp_addrolemember 'db_datareader', 'pizzeria_user';
    EXEC sp_addrolemember 'db_datawriter', 'pizzeria_user';

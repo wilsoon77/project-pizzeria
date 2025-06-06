@@ -1,101 +1,180 @@
--- Create the database if it doesn't exist
-IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'pizzeria')
-BEGIN
-    CREATE DATABASE pizzeria;
-END
+USE [pizzeria]
+GO
+/****** Object:  Table [dbo].[Categoria_Pizza]    Script Date: 05/06/2025 17:21:54 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Categoria_Pizza](
+	[id] [int] IDENTITY(1,1) NOT NULL,
+	[nombre] [nvarchar](100) NOT NULL,
+	[descripcion] [nvarchar](255) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Cliente]    Script Date: 05/06/2025 17:21:54 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Cliente](
+	[id] [int] IDENTITY(1,1) NOT NULL,
+	[nombre] [nvarchar](100) NOT NULL,
+	[email] [nvarchar](100) NOT NULL,
+	[password_hash] [nvarchar](255) NOT NULL,
+	[direccion] [nvarchar](255) NULL,
+	[telefono] [nvarchar](20) NULL,
+	[fecha_registro] [datetime] NULL,
+	[es_admin] [bit] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[email] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Detalle_Orden]    Script Date: 05/06/2025 17:21:54 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Detalle_Orden](
+	[id] [int] IDENTITY(1,1) NOT NULL,
+	[orden_id] [int] NOT NULL,
+	[pizza_id] [int] NOT NULL,
+	[tamano_id] [int] NOT NULL,
+	[cantidad] [int] NOT NULL,
+	[precio_unitario] [decimal](8, 2) NOT NULL,
+	[subtotal] [decimal](10, 2) NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Factura]    Script Date: 05/06/2025 17:21:54 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Factura](
+	[id] [int] IDENTITY(1,1) NOT NULL,
+	[orden_id] [int] NOT NULL,
+	[numero_factura] [nvarchar](20) NOT NULL,
+	[fecha_emision] [datetime] NULL,
+	[monto_total] [decimal](10, 2) NOT NULL,
+	[estado_pago] [nvarchar](50) NOT NULL,
+	[metodo_pago] [nvarchar](50) NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[numero_factura] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[orden_id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Orden]    Script Date: 05/06/2025 17:21:54 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Orden](
+	[id] [int] IDENTITY(1,1) NOT NULL,
+	[cliente_id] [int] NOT NULL,
+	[fecha_orden] [datetime] NULL,
+	[estado] [nvarchar](50) NOT NULL,
+	[direccion_entrega] [nvarchar](255) NOT NULL,
+	[telefono_contacto] [nvarchar](20) NOT NULL,
+	[metodo_pago] [nvarchar](50) NOT NULL,
+	[total] [decimal](10, 2) NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Pizza]    Script Date: 05/06/2025 17:21:54 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Pizza](
+	[id] [int] IDENTITY(1,1) NOT NULL,
+	[nombre] [nvarchar](100) NOT NULL,
+	[descripcion] [nvarchar](255) NULL,
+	[precio_base] [decimal](8, 2) NOT NULL,
+	[imagen_url] [nvarchar](255) NULL,
+	[categoria_id] [int] NOT NULL,
+	[disponible] [bit] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Tamano_Pizza]    Script Date: 05/06/2025 17:21:54 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Tamano_Pizza](
+	[id] [int] IDENTITY(1,1) NOT NULL,
+	[nombre] [nvarchar](50) NOT NULL,
+	[factor_precio] [decimal](4, 2) NOT NULL,
+	[descripcion] [nvarchar](255) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[Cliente] ADD  DEFAULT (getdate()) FOR [fecha_registro]
+GO
+ALTER TABLE [dbo].[Cliente] ADD  DEFAULT ((0)) FOR [es_admin]
+GO
+ALTER TABLE [dbo].[Detalle_Orden] ADD  DEFAULT ((1)) FOR [cantidad]
+GO
+ALTER TABLE [dbo].[Factura] ADD  DEFAULT (getdate()) FOR [fecha_emision]
+GO
+ALTER TABLE [dbo].[Factura] ADD  DEFAULT ('Pendiente') FOR [estado_pago]
+GO
+ALTER TABLE [dbo].[Orden] ADD  DEFAULT (getdate()) FOR [fecha_orden]
+GO
+ALTER TABLE [dbo].[Orden] ADD  DEFAULT ('Pendiente') FOR [estado]
+GO
+ALTER TABLE [dbo].[Pizza] ADD  DEFAULT ((1)) FOR [disponible]
+GO
+ALTER TABLE [dbo].[Detalle_Orden]  WITH CHECK ADD FOREIGN KEY([orden_id])
+REFERENCES [dbo].[Orden] ([id])
+GO
+ALTER TABLE [dbo].[Detalle_Orden]  WITH CHECK ADD FOREIGN KEY([pizza_id])
+REFERENCES [dbo].[Pizza] ([id])
+GO
+ALTER TABLE [dbo].[Detalle_Orden]  WITH CHECK ADD FOREIGN KEY([tamano_id])
+REFERENCES [dbo].[Tamano_Pizza] ([id])
+GO
+ALTER TABLE [dbo].[Factura]  WITH CHECK ADD FOREIGN KEY([orden_id])
+REFERENCES [dbo].[Orden] ([id])
+GO
+ALTER TABLE [dbo].[Orden]  WITH CHECK ADD FOREIGN KEY([cliente_id])
+REFERENCES [dbo].[Cliente] ([id])
+GO
+ALTER TABLE [dbo].[Pizza]  WITH CHECK ADD FOREIGN KEY([categoria_id])
+REFERENCES [dbo].[Categoria_Pizza] ([id])
 GO
 
-USE pizzeria;
-GO
-
--- Drop tables if they exist (in reverse order of dependencies)
-IF OBJECT_ID('dbo.Factura', 'U') IS NOT NULL DROP TABLE dbo.Factura;
-IF OBJECT_ID('dbo.Detalle_Orden', 'U') IS NOT NULL DROP TABLE dbo.Detalle_Orden;
-IF OBJECT_ID('dbo.Orden', 'U') IS NOT NULL DROP TABLE dbo.Orden;
-IF OBJECT_ID('dbo.Pizza', 'U') IS NOT NULL DROP TABLE dbo.Pizza;
-IF OBJECT_ID('dbo.Cliente', 'U') IS NOT NULL DROP TABLE dbo.Cliente;
-IF OBJECT_ID('dbo.Tamano_Pizza', 'U') IS NOT NULL DROP TABLE dbo.Tamano_Pizza;
-IF OBJECT_ID('dbo.Categoria_Pizza', 'U') IS NOT NULL DROP TABLE dbo.Categoria_Pizza;
-GO
-
--- Create tables
-CREATE TABLE Categoria_Pizza (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    nombre NVARCHAR(100) NOT NULL,
-    descripcion NVARCHAR(255)
-);
-
-CREATE TABLE Tamano_Pizza (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    nombre NVARCHAR(50) NOT NULL,
-    factor_precio DECIMAL(4,2) NOT NULL,
-    descripcion NVARCHAR(255)
-);
-
-CREATE TABLE Pizza (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    nombre NVARCHAR(100) NOT NULL,
-    descripcion NVARCHAR(255),
-    precio_base DECIMAL(8,2) NOT NULL,
-    imagen_url NVARCHAR(255),
-    categoria_id INT NOT NULL,
-    ingredientes NVARCHAR(500),
-    disponible BIT NOT NULL DEFAULT 1,
-    FOREIGN KEY (categoria_id) REFERENCES Categoria_Pizza(id)
-);
-
-CREATE TABLE Cliente (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    nombre NVARCHAR(100) NOT NULL,
-    email NVARCHAR(100) NOT NULL UNIQUE,
-    password_hash NVARCHAR(255) NOT NULL,
-    direccion NVARCHAR(255),
-    telefono NVARCHAR(20),
-    fecha_registro DATETIME DEFAULT GETDATE(),
-    es_admin BIT NOT NULL DEFAULT 0
-);
-
-CREATE TABLE Orden (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    cliente_id INT NOT NULL,
-    fecha_orden DATETIME DEFAULT GETDATE(),
-    estado NVARCHAR(50) NOT NULL DEFAULT 'Pendiente',
-    direccion_entrega NVARCHAR(255) NOT NULL,
-    telefono_contacto NVARCHAR(20) NOT NULL,
-    metodo_pago NVARCHAR(50) NOT NULL,
-    total DECIMAL(10,2) NOT NULL,
-    notas NVARCHAR(500),
-    FOREIGN KEY (cliente_id) REFERENCES Cliente(id)
-);
-
-CREATE TABLE Detalle_Orden (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    orden_id INT NOT NULL,
-    pizza_id INT NOT NULL,
-    tamano_id INT NOT NULL,
-    cantidad INT NOT NULL DEFAULT 1,
-    precio_unitario DECIMAL(8,2) NOT NULL,
-    subtotal DECIMAL(10,2) NOT NULL,
-    instrucciones_especiales NVARCHAR(255),
-    FOREIGN KEY (orden_id) REFERENCES Orden(id),
-    FOREIGN KEY (pizza_id) REFERENCES Pizza(id),
-    FOREIGN KEY (tamano_id) REFERENCES Tamano_Pizza(id)
-);
-
-CREATE TABLE Factura (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    orden_id INT NOT NULL UNIQUE,
-    numero_factura NVARCHAR(20) NOT NULL UNIQUE,
-    fecha_emision DATETIME DEFAULT GETDATE(),
-    monto_total DECIMAL(10,2) NOT NULL,
-    estado_pago NVARCHAR(50) NOT NULL DEFAULT 'Pendiente',
-    metodo_pago NVARCHAR(50) NOT NULL,
-    FOREIGN KEY (orden_id) REFERENCES Orden(id)
-);
-GO
-
-USE pizzeriaDB;
-GO
 
 -- Insert categories
 INSERT INTO Categoria_Pizza (nombre, descripcion)
@@ -158,3 +237,85 @@ VALUES (@OrdenID, 'FAC-2023-001', 20.23, 'Pagado', 'Efectivo');
 GO
 
 select * from Factura
+
+
+----------------------------------------------------
+--------------CONSULTAS----------------------------
+----------------------------------------------------
+
+-- Consulta para obtener métricas principales del dashboard
+SELECT
+    (SELECT COUNT(*) FROM Orden WHERE CAST(fecha_orden AS DATE) = CAST(GETDATE() AS DATE)) AS pedidos_hoy,
+    (SELECT SUM(total) FROM Orden WHERE CAST(fecha_orden AS DATE) = CAST(GETDATE() AS DATE)) AS ingresos_hoy,
+    (SELECT COUNT(*) FROM Cliente) AS total_clientes,
+    (SELECT COUNT(*) FROM Orden WHERE estado = 'en_camino') AS pedidos_en_proceso
+
+
+-- Consulta para el gráfico circular de ventas por categoría
+SELECT 
+    c.nombre AS categoria,
+    COUNT(do.id) AS cantidad_vendida,
+    SUM(do.subtotal) AS total_ventas
+FROM Detalle_Orden do
+JOIN Pizza p ON do.pizza_id = p.id
+JOIN Categoria_Pizza c ON p.categoria_id = c.id
+JOIN Orden o ON do.orden_id = o.id
+WHERE o.fecha_orden >= DATEADD(MONTH, -1, GETDATE())
+GROUP BY c.nombre
+ORDER BY total_ventas DESC
+
+-- Consulta para el gráfico de barras de pedidos por día
+SELECT 
+    CAST(fecha_orden AS DATE) AS fecha,
+    COUNT(*) AS cantidad_pedidos,
+    SUM(total) AS total_ventas
+FROM Orden
+WHERE fecha_orden >= DATEADD(DAY, -7, GETDATE())
+GROUP BY CAST(fecha_orden AS DATE)
+ORDER BY fecha
+
+-- Consulta para el gráfico de líneas de ingresos mensuales
+SELECT 
+    YEAR(fecha_orden) AS año,
+    MONTH(fecha_orden) AS mes,
+    SUM(total) AS total_ventas
+FROM Orden
+WHERE fecha_orden >= DATEADD(MONTH, -12, GETDATE())
+GROUP BY YEAR(fecha_orden), MONTH(fecha_orden)
+ORDER BY año, mes
+
+-- Consulta para análisis de rendimiento por día y hora
+SELECT 
+    DATEPART(WEEKDAY, fecha_orden) AS dia_semana,
+    DATEPART(HOUR, fecha_orden) AS hora,
+    COUNT(*) AS cantidad_pedidos,
+    AVG(total) AS ticket_promedio
+FROM Orden
+WHERE fecha_orden >= DATEADD(MONTH, -3, GETDATE())
+GROUP BY DATEPART(WEEKDAY, fecha_orden), DATEPART(HOUR, fecha_orden)
+ORDER BY dia_semana, hora
+
+-- Consulta para la vista de pedidos pendientes con detalles
+SELECT 
+    o.id,
+    o.fecha_orden,
+    c.nombre AS cliente,
+    o.direccion_entrega,
+    o.telefono_contacto,
+    o.estado,
+    STRING_AGG(CONCAT(p.nombre, ' (', tp.nombre, ') x', do.cantidad), ', ') AS items,
+    o.total
+FROM Orden o
+JOIN Cliente c ON o.cliente_id = c.id
+JOIN Detalle_Orden do ON o.id = do.orden_id
+JOIN Pizza p ON do.pizza_id = p.id
+JOIN Tamano_Pizza tp ON do.tamano_id = tp.id
+WHERE o.estado IN ('recibido', 'en_preparacion', 'en_camino')
+GROUP BY o.id, o.fecha_orden, c.nombre, o.direccion_entrega, o.telefono_contacto, o.estado, o.total
+ORDER BY 
+    CASE 
+        WHEN o.estado = 'recibido' THEN 1
+        WHEN o.estado = 'en_preparacion' THEN 2
+        WHEN o.estado = 'en_camino' THEN 3
+    END,
+    o.fecha_orden

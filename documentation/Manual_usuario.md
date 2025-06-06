@@ -7,9 +7,8 @@
 2. [Navegando por el Menú](#navegando-por-el-menú)
 3. [Usando el Carrito de Compras](#usando-el-carrito-de-compras)
 4. [Proceso de Checkout y Pago](#proceso-de-checkout-y-pago)
-5. [Seguimiento de Pedidos](#seguimiento-de-pedidos)
-6. [Mi Cuenta](#mi-cuenta)
-7. [Guía para Administradores](#guía-para-administradores)
+5. [Mi Cuenta](#mi-cuenta)
+6. [Guía para Administradores](#guía-para-administradores)
 
 ## Primeros Pasos
 
@@ -17,8 +16,8 @@
 
 1. **Visitando el sitio**:
    - Abre tu navegador web
-   - Ve a [www.pizzeriadeliciosa.com](https://www.pizzeriadeliciosa.com)
-   - Verás nuestra página principal con las ofertas y destacados del día
+   - Ve a [www.pizzeriadeliciosa.com](localhost:5173)
+   - Verás nuestra página principal Y productos Destacados
 
 2. **Registro de Usuario**:
    - Haz clic en "Registrarse" en la esquina superior derecha
@@ -26,7 +25,7 @@
      - Nombre completo
      - Correo electrónico
      - Contraseña
-     - Dirección de entrega
+     - Dirección
      - Número de teléfono
    - Haz clic en "Crear Cuenta"
    - ¡Ya eres parte de la familia Pizzería Deliciosa!
@@ -49,19 +48,13 @@
      - Clásicas
      - Especiales
      - Vegetarianas
-     - Premiadas
+     - Picantes
 
 2. **Filtrar por Categoría**:
    - Usa los botones de categoría en la parte superior del menú
    - Haz clic en cada categoría para ver solo las pizzas de ese tipo
 
-3. **Ver Detalles de una Pizza**:
-   - Haz clic en la imagen o en el botón "Ver Detalles" de la pizza que te interese
-   - Se abrirá una ventana con información completa:
-     - Descripción detallada
-     - Ingredientes
-     - Precios según tamaño
-     - Opciones adicionales
+
 
 ![Catálogo de Pizzas](./screenshots/pizza-catalog.png)
 
@@ -71,8 +64,8 @@
    - En la ficha de cada pizza, selecciona el tamaño deseado:
      - Personal (8")
      - Mediana (12")
-     - Grande (14")
-     - Familiar (16")
+     - Familiar (14")
+     - Gigante (16")
 
 2. **Seleccionar Cantidad**:
    - Usa los botones + y - para ajustar la cantidad de pizzas
@@ -122,7 +115,6 @@
    - Revisa y actualiza si es necesario:
      - Dirección de entrega
      - Número de teléfono
-     - Instrucciones especiales (opcional)
 
 2. **Seleccionar Método de Pago**:
    - Elige entre las opciones disponibles:
@@ -133,7 +125,7 @@
 3. **Revisar Resumen del Pedido**:
    - Verifica la lista de productos
    - Revisa el subtotal, gastos de envío y total
-   - Nota: ¡Envío gratis en pedidos superiores a Q150!
+   - Nota: ¡Envío gratis en pedidos superiores a Q100!
 
 ![Proceso de Checkout](./screenshots/checkout-process.png)
 
@@ -151,27 +143,6 @@
 
 ![Confirmación de Pedido](./screenshots/order-confirmation.png)
 
-## Seguimiento de Pedidos
-
-### Ver Estado de tu Pedido
-
-1. **Desde la Página de Confirmación**:
-   - Haz clic en "Seguir Pedido" en la página de confirmación
-   - O utiliza el enlace en el correo de confirmación
-
-2. **Desde tu Cuenta**:
-   - Inicia sesión en tu cuenta
-   - Ve a "Mis Pedidos"
-   - Selecciona el pedido que quieres seguir
-   - Haz clic en "Ver Detalles"
-
-3. **Información Disponible**:
-   - Estado actual (Recibido, En preparación, En camino, Entregado)
-   - Tiempo estimado de entrega
-   - Historial de estados del pedido
-   - Detalles de contacto del repartidor (cuando esté en camino)
-
-![Seguimiento de Pedido](./screenshots/order-tracking.png)
 
 ## Mi Cuenta
 
@@ -193,33 +164,13 @@
 
 ![Perfil de Usuario](./screenshots/user-profile.png)
 
-### Historial de Pedidos
-
-1. **Ver Historial**:
-   - En tu cuenta, selecciona "Mis Pedidos"
-   - Verás una lista de todos tus pedidos anteriores
-   - Los pedidos aparecen ordenados del más reciente al más antiguo
-
-2. **Detalles del Pedido**:
-   - Haz clic en cualquier pedido para ver todos los detalles
-   - Productos, cantidades y precios
-   - Fecha y hora
-   - Estado final
-   - Información de facturación
-
-3. **Descargar Facturas**:
-   - En los detalles del pedido, busca la sección de factura
-   - Haz clic en "Descargar Factura" para obtener el PDF
-   - La factura incluye todos los detalles fiscales necesarios
-
-![Historial de Pedidos](./screenshots/order-history.png)
 
 ## Guía para Administradores
 
 ### Acceso al Panel de Administración
 
 1. **Ingresar como Admin**:
-   - Ve a [www.pizzeriadeliciosa.com/admin/login](https://www.pizzeriadeliciosa.com/admin/login)
+   - Ve a [www.pizzeriadeliciosa.com/admin/login](localhost:5173/admin/login)
    - Ingresa tus credenciales de administrador
    - Accederás al panel de control administrativo
 
@@ -283,7 +234,7 @@
 2. **Exportar Datos**:
    - Una vez generado el reporte, haz clic en "Exportar a Excel"
    - El archivo se descargará automáticamente
-   - Abre con Microsoft Excel o programa similar
+   - Abre con Microsoft Excel 
 
 ![Reportes y Estadísticas](./screenshots/reports-statistics.png)
 

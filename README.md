@@ -20,6 +20,7 @@ Sistema completo para gestión de pizzería en línea con funcionalidades para c
 - Dashboard con estadísticas en tiempo real
 - Gestión completa de catálogo de productos
 - Administración de pedidos y cambios de estado
+- Administración De Clientes
 - Generación y envío de facturas
 - Exportación de reportes a Excel
 
@@ -45,13 +46,12 @@ Sistema completo para gestión de pizzería en línea con funcionalidades para c
 
 ![Pantalla Principal](./screenshots/home.png)
 ![Panel Administrativo](./screenshots/admin-dashboard.png)
+![Carrito](./screenshots/carrito.png)
 ![Proceso de Pedido](./screenshots/checkout.png)
 
 ## Estructura del Proyecto
+```
 pizzeria/
-├── public/                    # Archivos públicos
-│   ├── images/               # Imágenes y recursos gráficos
-│   └── favicon.ico           # Favicon del sitio
 ├── src/                      # Código fuente del frontend
 │   ├── components/           # Componentes reutilizables
 │   ├── context/              # Contextos de React (carrito, autenticación)
@@ -60,29 +60,26 @@ pizzeria/
 │   ├── types/                # Definiciones de tipos TypeScript
 │   ├── utils/                # Utilidades y helpers
 │   └── index.css             # Estilos globales
+│   └── App.tsx               # Componente Principal de la aplicación
 ├── server/                   # Código del servidor Node.js/Express
-│   ├── controllers/          # Controladores de la API
-│   ├── middleware/           # Middlewares
-│   ├── routes/               # Rutas de la API
-│   └── index.js              # Punto de entrada del servidor
-├── database/                 # Scripts SQL para la base de datos
-│   ├── 01_create_database.sql
-│   ├── 02_create_tables.sql
-│   └── 03_initial_data.sql
+│   ├── Facturas
+│   └── index.js              # Punto de entrada del servidor/ Endponints Principales del API
+├── database/                 # Scripts SQL para la base de datos  
+│   └── db.sql
 ├── documentation/            # Documentación del proyecto
 │   ├── Manual_Tecnico.md     # Documentación técnica detallada
 │   └── Manual_Usuario.md     # Manual de usuario
 ├── package.json              # Dependencias del proyecto
 ├── vite.config.ts            # Configuración de Vite
 ├── tsconfig.json             # Configuración de TypeScript
-└── README.md                 # Este archivo (Documentación del proyecto)
-
+└── README.md                 # Documentación General del proyecto
+```
 
 ## Instalación Rápida
 
 1. Clonar el repositorio
 2. Instalar dependencias: `npm install`
-3. Configurar variables de entorno (ver TECHNICAL_DOCS.md)
+3. Configurar variables de entorno 
 4. Iniciar servidor: `npm run server`
 5. Iniciar cliente: `npm run dev`
 
