@@ -1,6 +1,7 @@
 # Sistema de Pizzería Online - Pizzería Deliciosa
 
-![Logo de Pizzería Deliciosa](./public/images/logo.png)
+![image](https://github.com/user-attachments/assets/73b3914a-03c6-474f-bb46-d59cbf9b65e4)
+
 
 ## Descripción General
 
@@ -44,10 +45,15 @@ Sistema completo para gestión de pizzería en línea con funcionalidades para c
 
 ## Capturas de Pantalla
 
-![Pantalla Principal](./screenshots/home.png)
-![Panel Administrativo](./screenshots/admin-dashboard.png)
-![Carrito](./screenshots/carrito.png)
-![Proceso de Pedido](./screenshots/checkout.png)
+![image](https://github.com/user-attachments/assets/9006f7cc-0b66-4731-ba2a-0c3b9ad010f5)
+
+![image](https://github.com/user-attachments/assets/002f31be-94c4-476e-9996-a367e0d6e039)
+
+![image](https://github.com/user-attachments/assets/083be057-b77a-4a5b-b3ca-96b51ca8859e)
+
+![image](https://github.com/user-attachments/assets/cd87e4bd-a5ff-4d5f-8302-ecbba07886f3)
+
+
 
 ## Estructura del Proyecto
 ```
