@@ -82,12 +82,8 @@ pizzeria-online/
 ### Diagrama Entidad-Relación
 
 
-```
-mermaid
----
-config:
-  theme: neo-dark
----
+```mermaid
+
 erDiagram
     CATEGORIA_PIZZA ||--o{ PIZZA : "pertenece_a"
     PIZZA ||--o{ DETALLE_ORDEN : "contiene"
@@ -95,11 +91,13 @@ erDiagram
     CLIENTE ||--o{ ORDEN : "realiza"
     ORDEN ||--o{ DETALLE_ORDEN : "incluye"
     ORDEN ||--o| FACTURA : "genera"
+
     CATEGORIA_PIZZA {
         int id PK
         string nombre
         string descripcion
     }
+
     PIZZA {
         int id PK
         string nombre
@@ -107,22 +105,27 @@ erDiagram
         decimal precio_base
         int categoria_id FK
         string imagen_url
-        bool disponible
+        boolean disponible
     }
+
     TAMANO_PIZZA {
         int id PK
         string nombre
         decimal factor_precio
+        string descripcion
     }
+
     CLIENTE {
         int id PK
         string nombre
         string email UK
-        string password
+        string password_hash
         string direccion
         string telefono
-        string rol
+        datetime fecha_registro
+        boolean es_admin
     }
+
     ORDEN {
         int id PK
         int cliente_id FK
@@ -133,6 +136,7 @@ erDiagram
         string metodo_pago
         decimal total
     }
+
     DETALLE_ORDEN {
         int id PK
         int orden_id FK
@@ -142,6 +146,7 @@ erDiagram
         decimal precio_unitario
         decimal subtotal
     }
+
     FACTURA {
         int id PK
         int orden_id FK
@@ -153,6 +158,7 @@ erDiagram
     }
 
 ```
+
 
 ### Descripción de Tablas
 
