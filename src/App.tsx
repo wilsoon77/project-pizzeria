@@ -46,8 +46,7 @@ function App() {
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                <Route path="/order/:id" element={<OrderStatus />} />
-
+                <Route path="/orden/:id" element={<OrderStatus />} />
 
                 <Route path="/orden-confirmacion" element={<OrdenConfirmacion />} />
 

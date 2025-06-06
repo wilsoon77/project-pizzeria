@@ -12,14 +12,14 @@ const OrderConfirmation: React.FC = () => {
         <div className="flex justify-center mb-6">
           <CheckCircle size={64} className="text-green-500" />
         </div>
-        
+
         <h1 className="text-3xl font-bold mb-4">¡Pedido Confirmado!</h1>
         <p className="text-xl mb-2">Tu orden #{orden_id} ha sido registrada correctamente.</p>
         <p className="text-gray-600 mb-6">
-          Hemos enviado un correo electrónico con los detalles de tu pedido. 
+          Hemos enviado un correo electrónico con los detalles de tu pedido.
           Pronto estarás disfrutando de tu deliciosa pizza.
         </p>
-        
+
         <div className="bg-gray-50 p-4 rounded-lg mb-6">
           <p className="text-gray-700 mb-2">
             <span className="font-medium">Total pagado:</span> Q{total.toFixed(2)}
@@ -28,14 +28,14 @@ const OrderConfirmation: React.FC = () => {
             <span className="font-medium">Método de pago:</span> Pago en la entrega
           </p>
         </div>
-        
+
         <div className="space-y-4">
           <Link to="/" className="btn-primary block w-full py-3">
             Volver al menú principal
           </Link>
-          
-          {/* <Link to="/mi-cuenta/pedidos" className="text-[#D72323] hover:underline">
-            Ver mis pedidos
+
+          {/* <Link to={`/orden/${orden_id}`} className="text-[#D72323] hover:underline block mt-4">
+            Seguir estado de mi pedido
           </Link> */}
         </div>
       </div>

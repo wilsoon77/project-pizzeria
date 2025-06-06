@@ -29,7 +29,7 @@ interface OrderDetails {
   };
 }
 
-const Order: React.FC = () => {
+const OrderStatus: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,7 +76,7 @@ const Order: React.FC = () => {
 
   // Get order status for progress bar
   const statusSteps = ['recibido', 'en preparacion', 'en camino', 'entregado'];
-  const currentStepIndex = statusSteps.indexOf(order.estado.toLowerCase());
+  const currentStepIndex = order && order.estado ? statusSteps.indexOf(order.estado.toLowerCase()) : 0;
 
   // Format date
   const formatDate = (dateString: string) => {
@@ -230,4 +230,4 @@ const Order: React.FC = () => {
   );
 };
 
-export default Order;
+export default OrderStatus;

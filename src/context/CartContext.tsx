@@ -17,7 +17,6 @@ export interface Pizza {
   imagen?: string;        // Image URL from demo data
   imagen_url?: string;    // Image URL from database
   categoria_id: number;   // Category ID
-  //ingredientes?: string;  // Ingredients list
   disponible?: boolean;   // Availability flag
 }
 
@@ -38,6 +37,15 @@ interface CartContextType {
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+
+// Funciones de ayuda para manejar diferentes formatos de IDs
+const getPizzaId = (pizza: Pizza): number | undefined => {
+  return pizza.id || pizza.pizza_id;
+};
+
+const getSizeId = (size: PizzaSize): number | undefined => {
+  return size.id || size.tamano_id;
+};
 
 export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -60,9 +68,9 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
   }, [items]);
 
   const addToCart = (pizza: Pizza, size: PizzaSize, quantity: number) => {
-    // Verificar si ya existe la misma pizza con el mismo tamaño
+    // Verificar si ya existe la misma pizza con el mismo tamaño usando las funciones auxiliares
     const existingItemIndex = items.findIndex(
-      item => item.pizza.pizza_id === pizza.pizza_id && item.size.tamano_id === size.tamano_id
+      item => getPizzaId(item.pizza) === getPizzaId(pizza) && getSizeId(item.size) === getSizeId(size)
     );
 
     if (existingItemIndex !== -1) {

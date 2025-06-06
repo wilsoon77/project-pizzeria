@@ -91,7 +91,7 @@ const Checkout: React.FC = () => {
     }
   };
 
-  const shippingCost = getTotalPrice() > 100 ? 0 : 3.99;
+  const shippingCost = getTotalPrice() > 100 ? 0 : 10;
   const totalCost = getTotalPrice() + shippingCost;
 
   return (

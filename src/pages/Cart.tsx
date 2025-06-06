@@ -123,13 +123,13 @@ const Cart: React.FC = () => {
               </div>
               <div className="flex justify-between py-2 text-sm">
                 <span className="text-gray-600">Gastos de envío</span>
-                <span>{getTotalPrice() > 20 ? 'Gratis' : 'Q3.99'}</span>
+                <span>{getTotalPrice() > 100 ? 'Gratis' : 'Q10.00'}</span>
               </div>
               <div className="border-t border-gray-200 mt-2 pt-2">
                 <div className="flex justify-between py-2">
                   <span className="font-bold">Total</span>
                   <span className="font-bold">
-                    Q{(getTotalPrice() + (getTotalPrice() > 20 ? 0 : 3.99)).toFixed(2)}
+                    Q{(getTotalPrice() + (getTotalPrice() > 100 ? 0 : 10)).toFixed(2)}
                   </span>
                 </div>
               </div>
