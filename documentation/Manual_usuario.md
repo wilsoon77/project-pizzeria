@@ -36,7 +36,8 @@
    - Haz clic en "Entrar"
    - Ahora tienes acceso a todas las funciones de usuario
 
-![Pantalla de Inicio de Sesión](./screenshots/login-screen.png)
+![image](https://github.com/user-attachments/assets/60494130-be83-45ba-ac85-73d87aa26e1c)
+
 
 ## Navegando por el Menú
 
@@ -55,8 +56,8 @@
    - Haz clic en cada categoría para ver solo las pizzas de ese tipo
 
 
+![image](https://github.com/user-attachments/assets/0b42f2f2-d2c0-4357-bf20-83ea5ebc5757)
 
-![Catálogo de Pizzas](./screenshots/pizza-catalog.png)
 
 ### Seleccionar una Pizza
 
@@ -76,7 +77,8 @@
    - Verás una notificación confirmando que se agregó correctamente
    - El contador del carrito en la parte superior se actualizará
 
-![Selección de Pizza](./screenshots/pizza-selection.png)
+![image](https://github.com/user-attachments/assets/ee3462ea-4b6a-4ed5-9763-1a5279d27da4)
+
 
 ## Usando el Carrito de Compras
 
@@ -104,7 +106,8 @@
    - Para seguir agregando productos: haz clic en "Seguir Comprando"
    - Para finalizar la compra: haz clic en "Ir a Pagar"
 
-![Carrito de Compras](./screenshots/shopping-cart.png)
+![image](https://github.com/user-attachments/assets/4ce7b1a7-0642-4d57-8863-3296607c0c1d)
+
 
 ## Proceso de Checkout y Pago
 
@@ -127,7 +130,8 @@
    - Revisa el subtotal, gastos de envío y total
    - Nota: ¡Envío gratis en pedidos superiores a Q100!
 
-![Proceso de Checkout](./screenshots/checkout-process.png)
+![image](https://github.com/user-attachments/assets/022d8c83-dae2-4eae-a310-43efa81c36b4)
+
 
 ### Confirmar y Pagar
 
@@ -141,7 +145,8 @@
    - Se te mostrará el número de orden para seguimiento
    - Recibirás un correo electrónico de confirmación
 
-![Confirmación de Pedido](./screenshots/order-confirmation.png)
+![image](https://github.com/user-attachments/assets/b2a1722e-e674-42fa-b409-fbc9ec0dec1d)
+
 
 
 ## Mi Cuenta
@@ -152,6 +157,7 @@
    - Inicia sesión en tu cuenta
    - Haz clic en tu nombre en la esquina superior derecha
    - Selecciona "Mi Perfil"
+   - Boton De Cerrar Sesion
 
 2. **Actualizar Información Personal**:
    - Modifica tu nombre, dirección o teléfono según sea necesario
@@ -162,7 +168,8 @@
    - Agrega o elimina direcciones de entrega
    - Marca una dirección como predeterminada
 
-![Perfil de Usuario](./screenshots/user-profile.png)
+![image](https://github.com/user-attachments/assets/60426acc-6e39-4960-b919-26ee6ec2e6d8)
+
 
 
 ## Guía para Administradores
@@ -180,7 +187,8 @@
    - Gráficos de rendimiento
    - Alertas y notificaciones
 
-![Panel de Administración](./screenshots/admin-dashboard.png)
+![image](https://github.com/user-attachments/assets/981a8f4b-786a-4f7e-a0d9-34f9a933d903)
+
 
 ### Gestión de Catálogo
 
@@ -197,7 +205,8 @@
    - Asigna a una categoría
    - Guarda los cambios
 
-![Gestión de Pizzas](./screenshots/pizza-management.png)
+![image](https://github.com/user-attachments/assets/c9ee3d09-cc2d-4a08-8ab0-7b3122a499c2)
+
 
 ### Gestión de Pedidos
 
@@ -218,7 +227,8 @@
    - Usa "Descargar Factura" para obtener el PDF
    - Haz clic en "Enviar Factura por Email" para enviarla al cliente
 
-![Gestión de Pedidos](./screenshots/order-management.png)
+![image](https://github.com/user-attachments/assets/9bd8c12d-d282-4dbf-9d61-ab251f373d89)
+
 
 ### Reportes y Estadísticas
 
@@ -234,9 +244,13 @@
 2. **Exportar Datos**:
    - Una vez generado el reporte, haz clic en "Exportar a Excel"
    - El archivo se descargará automáticamente
-   - Abre con Microsoft Excel 
+   - Abre con Microsoft Excel
+   - 
+![image](https://github.com/user-attachments/assets/e89195a1-a135-4b22-9bd6-442c393459ff)
 
-![Reportes y Estadísticas](./screenshots/reports-statistics.png)
+![image](https://github.com/user-attachments/assets/295a12f8-6e9f-4fc3-baba-88204557140f)
+
+
 
 ## Contacto y Soporte
 
