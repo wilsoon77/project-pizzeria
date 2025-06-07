@@ -246,6 +246,11 @@ Registra las facturas generadas.
 | estado_pago    | VARCHAR(50) | Estado del pago                |
 | metodo_pago    | VARCHAR(50) | Método de pago                 |
 
+- Contraseña Hasheada para Mayor Seguridad
+
+![image](https://github.com/user-attachments/assets/89d41bd1-093b-4ec9-beed-689cd2222a38)
+
+
 ## API RESTful
 
 ### Autenticación
