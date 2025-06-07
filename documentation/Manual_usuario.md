@@ -226,6 +226,13 @@
    - Haz clic en "Generar Factura" si aún no se ha creado
    - Usa "Descargar Factura" para obtener el PDF
    - Haz clic en "Enviar Factura por Email" para enviarla al cliente
+   - Para el Envio de Facturas se Utilizo el app https://resend.com/emails
+
+![image](https://github.com/user-attachments/assets/58b7e5cf-157d-4bd7-959d-b4b4ee719588)
+
+![image](https://github.com/user-attachments/assets/21d48fc0-706e-42e8-b4a8-9eb3dcc8a135)
+
+![image](https://github.com/user-attachments/assets/4fbe3ed1-2221-406e-9c6a-737dfd742af9)
 
 ![image](https://github.com/user-attachments/assets/9bd8c12d-d282-4dbf-9d61-ab251f373d89)
 
